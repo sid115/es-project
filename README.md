@@ -4,7 +4,7 @@
 
 ## Beschreibung
 [...]
-
+Wir bauen ein Drohnen-Projekt.
 ## Arbeitspakete
 
 ### Hardware
