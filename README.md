@@ -1,6 +1,6 @@
 # ES-Projekt
 
-> Hinweis: Nutzt meine [GitHub-Anleitung](https://github.com/sid115/GitHubTutorial) als Hilfestellung.
+> Hinweis: Nutzt meine [GitHub-Anleitung](https://github.com/sid115/GitHubTutorial) als Hilfestellung. Eine Anleitung zur Syntax von Markdown finder ihr [hier](https://www.markdownguide.org/basic-syntax/).
 
 ## Beschreibung
 [...]
