@@ -1,5 +1,7 @@
 # ES-Projekt
 
+> Hinweis: Nutzt meine [GitHub-Anleitung](https://github.com/sid115/GitHubTutorial) als Hilfestellung.
+
 ## Beschreibung
 [...]
 
