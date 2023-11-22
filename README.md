@@ -1,10 +1,10 @@
 # ES-Projekt
 
-> Hinweis: Nutzt meine [GitHub-Anleitung](https://github.com/sid115/GitHubTutorial) als Hilfestellung. Eine Anleitung zur Syntax von Markdown finder ihr [hier](https://www.markdownguide.org/basic-syntax/).
+> Hinweis: Nutzt meine [GitHub-Anleitung](https://github.com/sid115/GitHubTutorial) als Hilfestellung. Eine Anleitung zur Syntax von Markdown findet ihr [hier](https://www.markdownguide.org/basic-syntax/).
 
 ## Beschreibung
-[...]
 Wir bauen ein Drohnen-Projekt.
+
 ## Arbeitspakete
 
 ### Hardware
@@ -47,19 +47,5 @@ Datum | Aufgabe
 2024-01-24 | Abschluss: gemeinsames Inbetriebnehmen
 2024-01-31 | Abgabe src und docs
 
-### Gantt
-Arbeitspaket | Wann? | Wer?
----|---|---
-Ansteuerung           | KW48-50 | Moritz Joshua Teng
-Spannungsversorgung   | KW50    | Moritz
-Testaufbau            | KW50-52 | alle
-Verdrahtung           | KW50-01 | Henning
-externe Platinen      | KW50-01 | Moritz
-mit ULP3 fusionieren  | KW52    | Teng 
-Montage               | KW01    | Henning
-Animation Drohne      | KW01    | Joshua Teng
-Generierung Labyrinth | KW02    | Joshua
-Allg. Beschreibung    | KW52-02 | alle
-Schaltplan            | KW52-02 | alle
-SA/RT-Modell          | KW52-02 | alle
-Bauplan               | KW52-02 | alle
+### Aufgabenverteilung
+![Gantt-Diagramm](./assets/gantt.png)
