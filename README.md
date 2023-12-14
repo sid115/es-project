@@ -6,9 +6,9 @@
 Simulierte Paketdrohne auf Basis des MMCP-Protokolls auf einer LED-Matrix.
 
 ## Ordnerstruktur
-[assets](./assets/): exportierte Bilder, PDFs, etc.
-
-[plans](./assets/): Quelldateien zu Bauplänen, Schaltplänen, etc.
+- [assets](./assets/): exportierte Bilder, PDFs, etc.
+- [plans](./assets/): Quelldateien zu Bauplänen, Schaltplänen, etc.
+- [src](./src/): Source Code
 
 ### Projektskizze
 ![Skizze](./assets/sketch.png)
