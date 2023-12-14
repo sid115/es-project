@@ -64,7 +64,6 @@ uint16_t ceilDiv(uint16_t dividend, uint16_t divisor) {
 }
 
 /* transforms (x, y) in index of LED array */
-// TODO: implement lookup table calculated at runtime
 uint16_t coord2Index(uint16_t x, uint16_t y) { /* for us args as uint8_t are also fine */
     //return (floor(x / PANEL_LED_WIDTH) * (PANEL_LED_HEIGHT * MATRIX_PANEL_HEIGHT) + y) * PANEL_LED_WIDTH + x % PANEL_LED_WIDTH;
 

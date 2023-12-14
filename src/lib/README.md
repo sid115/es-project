@@ -27,4 +27,3 @@ Run:
 ## TODO
 
 - test coord2Index for correctness and speed
-- implement a lookup table to store all indices for each coordinate
