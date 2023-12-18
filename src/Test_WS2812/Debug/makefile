@@ -60,8 +60,8 @@ all: main-build
 main-build: Test_WS2812.elf secondary-outputs
 
 # Tool invocations
-Test_WS2812.elf Test_WS2812.map: $(OBJS) $(USER_OBJS) C:\ST\Workspace\Test_WS2812\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Test_WS2812.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\ST\Workspace\Test_WS2812\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Test_WS2812.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Test_WS2812.elf Test_WS2812.map: $(OBJS) $(USER_OBJS) /home/sid/src/es-project/src/Test_WS2812/STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Test_WS2812.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/sid/src/es-project/src/Test_WS2812/STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Test_WS2812.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
