@@ -77,7 +77,7 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
-  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
 }
 
 void writeLEDs(PixelRGB_t* pixel){
@@ -101,7 +101,7 @@ void writeLEDs(PixelRGB_t* pixel){
 	  }
 	  dmaBuffer[DMA_BUFF_SIZE - 1] = 0; // last element must be 0!
 
-	  HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_3, dmaBuffer, DMA_BUFF_SIZE);
+	  HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, dmaBuffer, DMA_BUFF_SIZE);
 }
 
 void writeBuffer(PixelRGB_t* pixel, int numPixel){
@@ -124,7 +124,7 @@ void writeBuffer(PixelRGB_t* pixel, int numPixel){
 
 void writeBufferToLEDs(){
 	dmaBuffer[DMA_BUFF_SIZE - 1] = 0; // last element must be 0!
-	HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_3, dmaBuffer, DMA_BUFF_SIZE);
+	HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, dmaBuffer, DMA_BUFF_SIZE);
 }
 /* USER CODE END 0 */
 
@@ -138,7 +138,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   PixelRGB_t pixel[NUM_PIXELS] = {0};
-  uint32_t dmaBuffer[DMA_BUFF_SIZE] = {0};
+  //uint32_t dmaBuffer[DMA_BUFF_SIZE] = {0};
   uint32_t *pBuff;
   int i, j, k;
   uint16_t stepSize;
@@ -172,6 +172,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   k = 0;
   stepSize = 4;
   while (1)
@@ -207,11 +208,9 @@ int main(void)
     k = (k + stepSize) % 765;
 
     // not so bright
-    /*
     pixel[0].color.g >>= 2;
     pixel[0].color.r >>= 2;
     pixel[0].color.b >>= 2;
-    */
 
     pBuff = dmaBuffer;
     for (i = 0; i < NUM_PIXELS; i++)
@@ -231,9 +230,30 @@ int main(void)
     }
     dmaBuffer[DMA_BUFF_SIZE - 1] = 0; // last element must be 0!
 
-    HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_3, dmaBuffer, DMA_BUFF_SIZE);
+    HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, dmaBuffer, DMA_BUFF_SIZE); // TODO: One Matrix: LEDs go blank sometimes, first LED blinks bright green. Timing issuse?
 
-    //HAL_Delay(10);
+    //HAL_Delay(20);
+
+/*
+  for (i = 0; i < NUM_PIXELS; i++){
+	  pixel[i].color.g = 15;
+	  pixel[i].color.r = 15;
+	  pixel[i].color.b = 15;
+	  pixel[i+1].color.g = 15;
+	  pixel[i+1].color.r = 15;
+	  pixel[i+1].color.b = 15;
+	  pixel[i+2].color.g = 15;
+	  pixel[i+2].color.r = 15;
+	  pixel[i+2].color.b = 15;
+	  if(i >= 2){
+		  pixel[i-2].color.g = 0;
+		  pixel[i-2].color.r = 0;
+		  pixel[i-2].color.b = 0;
+	  }
+	  writeLEDs(pixel);
+	  HAL_Delay(20);
+  }
+*/
   }
   /* USER CODE END 3 */
 }
