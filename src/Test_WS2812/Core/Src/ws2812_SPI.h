@@ -21,9 +21,9 @@ typedef struct
 extern SPI_HandleTypeDef WS2812_SPI_HANDLE;
 extern uint8_t ws2812_buffer[];
 
-uint16_t coord2Index (uint16_t _x, uint16_t _y);
+uint16_t coord2Index (uint8_t _x, uint8_t _y);
 void ws2812_init(void);
-void ws2812_pixel(uint16_t _x, uint16_t _y, ColorRGB_t* color);
+void ws2812_pixel(uint8_t _x, uint8_t _y, ColorRGB_t* color);
 void ws2812_pixel_all(ColorRGB_t* color);
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef * hspi);
 

@@ -106,8 +106,7 @@ int main(void)
     {0,   0,   0  }  // C_BLACK
   };
 
-  uint16_t x = 0;
-  uint16_t y = 0;
+  uint8_t x, y = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

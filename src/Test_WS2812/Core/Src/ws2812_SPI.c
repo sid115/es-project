@@ -26,7 +26,7 @@ void ws2812_init(void)
 }
 
 // set one pixel to given color
-void ws2812_pixel(uint16_t _x, uint16_t _y, ColorRGB_t* color)
+void ws2812_pixel(uint8_t _x, uint8_t _y, ColorRGB_t* color)
 {
   uint8_t* ptr = &ws2812_buffer[24 * coord2Index(_x, _y)];
   WS2812_FILL_BUFFER(color->g);
@@ -52,7 +52,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef * hspi)
   HAL_SPI_Transmit_DMA(&hspi2, ws2812_buffer, WS2812_BUFFER_SIZE);
 }
 
-uint16_t coord2Index (uint16_t _x, uint16_t _y)
+uint16_t coord2Index (uint8_t _x, uint8_t _y)
 {
   /* this is ugly but fast */
   static const uint16_t lookup_table[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X] = { // see src/lookup_table
