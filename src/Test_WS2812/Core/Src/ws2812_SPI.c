@@ -46,6 +46,18 @@ void ws2812_pixel_all(ColorRGB_t* color)
   }
 }
 
+// draw picture on matrix
+void ws2812_pixel_pic(ColorRGB_t* picture[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X])
+{
+  for (uint8_t x = 0; x < WS2812_NUM_LEDS_X; x++)
+  {
+    for (uint8_t y = 0; y < WS2812_NUM_LEDS_Y; y++)
+    {
+      ws2812_pixel(x, y, picture[y][x]);
+    }
+  }
+}
+
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef * hspi)
 {
   // Restart transmission when buffer tx is completed

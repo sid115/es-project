@@ -8,6 +8,6 @@ $(TARGET): $(SRC)
 	$(CC) -o $(TARGET) $(SRC)
 
 clean:
-	rm -f $(TARGET) maze.txt
+	rm -f $(TARGET) maze.txt path.txt
 
 .PHONY: all clean

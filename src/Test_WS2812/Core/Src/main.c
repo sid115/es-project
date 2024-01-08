@@ -105,8 +105,9 @@ int main(void)
     {128, 128, 0  }, // C_MAUVE
     {0,   0,   0  }  // C_BLACK
   };
+  ColorRGB_t* maze[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X] = {0}; // fill with &color[C_COLOR]
 
-  uint8_t x, y = 0;
+  uint8_t x, y = 0; // index variables
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -134,6 +135,16 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   ws2812_init();
+  for (x = 0; x < WS2812_NUM_LEDS_X; x++) 
+  {
+    for (y = 0; x < WS2812_NUM_LEDS_Y; y++) 
+    {
+      maze[y][x] = &color[x % 2];
+    }
+  }
+  ws2812_pixel_pic(maze);
+
+  x = 0; y = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -146,6 +157,7 @@ int main(void)
 	ws2812_pixel_all(&color[C_BLACK]);
 	HAL_Delay(100);
 	ws2812_pixel(x, y, &color[x % 16]);
+	//ws2812_pixel_all(&color[C_BLUE]);
 	HAL_Delay(100);
 
     x++;

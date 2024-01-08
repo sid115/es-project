@@ -25,6 +25,7 @@ uint16_t coord2Index (uint8_t _x, uint8_t _y);
 void ws2812_init(void);
 void ws2812_pixel(uint8_t _x, uint8_t _y, ColorRGB_t* color);
 void ws2812_pixel_all(ColorRGB_t* color);
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef * hspi);
+void ws2812_pixel_pic(ColorRGB_t* picture[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X]);
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi);
 
 #endif /* SRC_WS2812_SPI_H_ */
