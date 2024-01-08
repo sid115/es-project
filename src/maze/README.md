@@ -26,7 +26,4 @@ Run:
 
 ## TODO
 
-- mazes do not seem to have walls on the right and bottom
-- adapt [solving alg](https://raw.githubusercontent.com/joewing/maze/master/maze.c)
-- implement multiple starts/exits
-- tbh, I am not really sure if all mazes are solvable
+see [maze.c](./maze.c)
