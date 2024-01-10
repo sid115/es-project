@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define PANEL_WIDTH 8
 #define FILEPATH "lookup_table.txt"
@@ -38,11 +39,15 @@ void write2DArray(uint16_t** arr, uint16_t rows, uint16_t cols, const char* file
     {
       if (c == cols - 1)
       {
-        fprintf(file, "%d", arr[r][c]);
+        if (arr[r][c] < 10)       fprintf(file, "  %d", arr[r][c]);
+        else if (arr[r][c] < 100) fprintf(file, " %d",  arr[r][c]);
+        else                      fprintf(file, "%d",   arr[r][c]);
       }
-      else 
+      else
       {
-        fprintf(file, "%d, ", arr[r][c]);
+        if (arr[r][c] < 10)       fprintf(file, "  %d,", arr[r][c]);
+        else if (arr[r][c] < 100) fprintf(file, " %d,",  arr[r][c]);
+        else                      fprintf(file, "%d,",   arr[r][c]);
       }
     }
     if (r == rows - 1)

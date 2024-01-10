@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "math.h"
 #include "ws2812_SPI.h"
+#include "maze.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -105,9 +106,15 @@ int main(void)
     {128, 128, 0  }, // C_MAUVE
     {0,   0,   0  }  // C_BLACK
   };
-  ColorRGB_t* maze[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X] = {0}; // fill with &color[C_COLOR]
+  //ColorRGB_t* pixel[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X] = {0}; // fill with &color[C_COLOR]
+                                                                
+  /* maze vars */
+  uint8_t startX = 0;
+  uint8_t startY = 12;
+  uint8_t exitX = 39;
+  uint8_t exitY = 15;
 
-  uint8_t x, y = 0; // index variables
+  uint16_t i = 0, x = 0, y = 0; // index variables
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -135,38 +142,38 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   ws2812_init();
-  for (x = 0; x < WS2812_NUM_LEDS_X; x++) 
-  {
-    for (y = 0; x < WS2812_NUM_LEDS_Y; y++) 
-    {
-      maze[y][x] = &color[x % 2];
-    }
-  }
-  ws2812_pixel_pic(maze);
+  initMaze(&maze, WS2812_NUM_LEDS_Y, WS2812_NUM_LEDS_X, startX, startY, exitX, exitY);
+  initPath(&path, WS2812_NUM_LEDS_Y * WS2812_NUM_LEDS_X);
+  
+  generateMaze(&maze);
+  solveMaze(&maze, &path);
 
-  x = 0; y = 0;
+  /* write maze to matrix */
+  for (x = 0; x < WS2812_NUM_LEDS_X; x++)
+  {
+    for (y = 0; y < WS2812_NUM_LEDS_Y; y++)
+    {
+      if (maze.grid[y][x] == WALL)
+      {
+        ws2812_pixel(x, y, &(ColorRGB_t){15, 15, 15}); // C_WHITE is too bright
+      }
+    }
+  } 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  i = 0;
   while (1)
   {
     /* USER CODE END WHILE */
+    ws2812_pixel(path.p[i].x, path.p[i].y, &color[C_YELLOW]); // TODO: start point is not in path
+    HAL_Delay(50);
+    ws2812_pixel(path.p[i].x, path.p[i].y, &color[C_BLACK]);
 
+    i++;
+    if (i == path.size) i = 0;
     /* USER CODE BEGIN 3 */
-	ws2812_pixel_all(&color[C_BLACK]);
-	HAL_Delay(100);
-	ws2812_pixel(x, y, &color[x % 16]);
-	//ws2812_pixel_all(&color[C_BLUE]);
-	HAL_Delay(100);
-
-    x++;
-    if (x == WS2812_NUM_LEDS_X)
-    {
-      x = 0;
-      y++;
-    }
-    if (y == WS2812_NUM_LEDS_Y) y = 0;
   }
   /* USER CODE END 3 */
 }

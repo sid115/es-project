@@ -1,6 +1,6 @@
-../Core/Src/ws2812_SPI.c:22:6:ws2812_init	8	static
-../Core/Src/ws2812_SPI.c:29:6:ws2812_pixel	24	static
-../Core/Src/ws2812_SPI.c:38:6:ws2812_pixel_all	32	static
-../Core/Src/ws2812_SPI.c:50:6:ws2812_pixel_pic	24	static
-../Core/Src/ws2812_SPI.c:61:6:HAL_SPI_TxCpltCallback	16	static
-../Core/Src/ws2812_SPI.c:67:10:coord2Index	16	static
+../Core/Src/ws2812_SPI.c:9:6:ws2812_init	16	static
+../Core/Src/ws2812_SPI.c:18:6:ws2812_pixel	32	static
+../Core/Src/ws2812_SPI.c:30:6:ws2812_pixel_all	32	static
+../Core/Src/ws2812_SPI.c:42:6:ws2812_pixel_pic	24	static
+../Core/Src/ws2812_SPI.c:53:6:HAL_SPI_TxCpltCallback	16	static
+../Core/Src/ws2812_SPI.c:59:10:coord2Index	16	static

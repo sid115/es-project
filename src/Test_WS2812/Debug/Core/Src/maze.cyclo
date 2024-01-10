@@ -1,0 +1,10 @@
+../Core/Src/maze.c:6:6:initMaze	19
+../Core/Src/maze.c:45:6:initPath	2
+../Core/Src/maze.c:59:6:pathPush	1
+../Core/Src/maze.c:66:6:carveMaze	12
+../Core/Src/maze.c:103:6:flipPath	2
+../Core/Src/maze.c:120:6:generateMaze	3
+../Core/Src/maze.c:138:6:solveMaze	19
+../Core/Src/maze.c:221:6:trimPath	9
+../Core/Src/maze.c:256:6:freeMaze	2
+../Core/Src/maze.c:263:6:freePath	1

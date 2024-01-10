@@ -37,7 +37,6 @@ uint16_t ceilDiv(uint16_t dividend, uint16_t divisor) {
     if (divisor == 0) return 0; /* x/0 := 0 */
     //if (divisor == 1) return dividend; /* quicker if p(divisor=1) > 0.5 */
 
-
     /* The machine cuts all decimals and therefore always rounds down.
      * Statement: ∀z∈Z, ∀n∈Z*: ⌊(z+n-1)/n⌋ = ⌈z/n⌉
      *

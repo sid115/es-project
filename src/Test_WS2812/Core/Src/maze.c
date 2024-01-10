@@ -1,107 +1,21 @@
-#include <stdarg.h> /* for variadic functions */
-#include <stdbool.h>
-#include <stdint.h> /* for uint8_t */
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>   /* for srand() */
+#include "maze.h"
 
-#define PATH_FILEPATH "path.txt" /* path to path.txt as string */
-#define MAZE_FILEPATH "maze.txt" /* path to maze.txt as string */
-
-/* error messages */
-#define ERR_NO_ROWS           "Number of rows is 0."
-#define ERR_NO_COLS           "Number of columns is 0."
-#define ERR_START_NOT_IN_MAZE "The start point is not inside the maze."
-#define ERR_EXIT_NOT_IN_MAZE  "The exit point is not inside the maze."
-#define ERR_START_NOT_ON_EDGE "The start point is not on an edge of the maze."
-#define ERR_EXIT_NOT_ON_EDGE  "The exit point is not on an edge of the maze."
-#define ERR_START_ON_CORNER   "The start point is on a corner of the maze."
-#define ERR_EXIT_ON_CORNER    "The exit point is on a corner of the maze."
-#define ERR_START_IS_EXIT     "The start and exit point are the same."
-#define ERR_USAGE             "Usage: ./maze rows cols startY startX exitY exitX"
-#define ERR_FILE              "Error opening file."
-
-/* cell types */
-enum {PATH, WALL, START, EXIT, SOLUTION};
-
-typedef struct {
-    uint8_t x;
-    uint8_t y;
-    int prevX; /* to track path */
-    int prevY; /* to track path */
-} Point;
-
-typedef struct {
-    Point* p;
-    uint16_t size;
-} Path;
-
-typedef struct {
-    uint8_t rows;   /* number of rows in maze */
-    uint8_t cols;   /* number of columns in maze */
-    Point start;    /* start point */
-    Point exit;     /* exit point */
-    uint8_t** grid; /* pointer to 2D array representing maze */
-} Maze;
-
-void initMaze(Maze* maze, uint8_t rows, uint8_t cols, uint8_t startX, uint8_t startY, uint8_t exitX, uint8_t exitY);
-void initPath(Path* path, uint16_t pathSize);
-void pathPush(Path* path, Point* point);
-void carveMaze(Maze* maze, uint8_t x, uint8_t y);
-void flipPath(Path* path);
-void generateMaze(Maze* maze);
-void solveMaze(Maze* maze, Path* path);
-void trimPath(Path* path);
-void writeMaze(Maze* maze, const char* filepath);
-void writePath(Path* path, const char* filepath);
-void freeMaze(Maze* maze);
-void freePath(Path* path);
-void err(const char* message, ...);
-
-int main(int argc, char *argv[]) {
-    /* check args */
-    if (argc != 7) err(ERR_USAGE); /* number of args has to be 7 */
-
-    /* convert args to ints */
-    uint8_t rows   = atoi(argv[1]);
-    uint8_t cols   = atoi(argv[2]);
-    uint8_t startY = atoi(argv[3]);
-    uint8_t startX = atoi(argv[4]);
-    uint8_t exitY  = atoi(argv[5]);
-    uint8_t exitX  = atoi(argv[6]);
-
-    /* start */
-    Maze maze;
-    initMaze(&maze, rows, cols, startX, startY, exitX, exitY);
-    
-    Path path;
-    initPath(&path, rows * cols); // TODO: can be adjusted to sqrt(rows * cols)?
-
-    generateMaze(&maze);
-    solveMaze(&maze, &path);
-
-    writeMaze(&maze, MAZE_FILEPATH);
-    writePath(&path, PATH_FILEPATH); // TODO: instead of writing to a file, just pass path to animate function
-
-    freeMaze(&maze);
-    freePath(&path);
-
-    return 0;
-}
+Maze maze;
+Path path;
 
 void initMaze(Maze* maze, uint8_t rows, uint8_t cols, uint8_t startX, uint8_t startY, uint8_t exitX, uint8_t exitY) {
     uint8_t r, c; /* index variables */
 
     /* check input */
-    if (rows == 0) err(ERR_NO_ROWS);                                                                           /* number of rows must be greater than 0 */
-    if (cols == 0) err(ERR_NO_COLS);                                                                           /* number of cols must be greater than 0 */
-    if (startX == exitX && startY == exitY) err(ERR_START_IS_EXIT);                                            /* start and exit must be different */
-    if (startX >= cols || startY >= rows) err(ERR_START_NOT_IN_MAZE);                                          /* start point has to be inside the maze */
-    if (exitX >= cols || exitY >= rows) err(ERR_EXIT_NOT_IN_MAZE);                                             /* exit point has to be inside the maze */
-    if (!((startX == 0 || startX == cols-1) || (startY == 0 || startY == rows-1))) err(ERR_START_NOT_ON_EDGE); /* start point has to be on edge of maze */
-    if (!((exitX == 0 || exitX == cols-1) || (exitY == 0 || exitY == rows-1))) err(ERR_EXIT_NOT_ON_EDGE);      /* exit point has to be on edge of maze */
-    if ((startX == 0 || startX == cols-1) && (startY == 0 || startY == rows-1)) err(ERR_START_ON_CORNER);      /* start point must not be on corner of maze */
-    if ((exitX == 0 || exitX == cols-1) && (exitY == 0 || exitY == rows-1)) err(ERR_EXIT_ON_CORNER);           /* exit point must not be on corner of maze */
+    if (rows == 0) exit(1);                                                                 /* number of rows must be greater than 0 */
+    if (cols == 0) exit(1);                                                                 /* number of cols must be greater than 0 */
+    if (startX == exitX && startY == exitY) exit(1);                                        /* start and exit must be different */
+    if (startX >= cols || startY >= rows) exit(1);                                          /* start point has to be inside the maze */
+    if (exitX >= cols || exitY >= rows) exit(1);                                            /* exit point has to be inside the maze */
+    if (!((startX == 0 || startX == cols-1) || (startY == 0 || startY == rows-1))) exit(1); /* start point has to be on edge of maze */
+    if (!((exitX == 0 || exitX == cols-1) || (exitY == 0 || exitY == rows-1))) exit(1);     /* exit point has to be on edge of maze */
+    if ((startX == 0 || startX == cols-1) && (startY == 0 || startY == rows-1)) exit(1);    /* start point must not be on corner of maze */
+    if ((exitX == 0 || exitX == cols-1) && (exitY == 0 || exitY == rows-1)) exit(1);        /* exit point must not be on corner of maze */
 
     maze->rows = rows;
     maze->cols = cols;
@@ -228,7 +142,6 @@ void solveMaze(Maze* maze, Path* path) {
     Point current;
     uint8_t x, y = 0; /* copy of current */
     Point next;
-    uint16_t cnt = 0; /* counter for path array */
 
     bool** visited = malloc(maze->rows * sizeof(bool*)); /* keep track of visited cells */
     for (i = 0; i < maze->rows; i++) {
@@ -258,7 +171,7 @@ void solveMaze(Maze* maze, Path* path) {
             /* trace back path, mark it and write it to solution path */
             while (!(x == start.x && y == start.y)) {
                 maze->grid[y][x] = SOLUTION;
-                pathPush(path, &start);
+                pathPush(path, &(Point){x, y, -1, -1}); // TODO: prevX, prevY needed?
                 for (i = 0; i < rear; i++) {
                     if (queue[i].x == x && queue[i].y == y) {
                         x = queue[i].prevX;
@@ -340,35 +253,6 @@ void trimPath(Path* path) {
     }
 }
 
-void writeMaze(Maze* maze, const char* filepath) {
-    FILE* file = fopen(filepath, "w");
-    uint16_t r, c; /* index variables */
-
-    if (file == NULL) err(ERR_FILE);
-
-    for (r = 0; r < maze->rows; r++) {
-        for (c = 0; c < maze->cols; c++) {
-            fprintf(file, "%d", maze->grid[r][c]);
-        }
-        fprintf(file, "\n");
-    }
-
-    fclose(file);
-}
-
-void writePath(Path* path, const char* filepath) {
-    FILE* file = fopen(filepath, "w");
-    uint16_t i; /* index variable */
-
-    if (file == NULL) err(ERR_FILE);
-
-    for (i = 0; i < path->size; i++) {
-        fprintf(file, "%d %d\n", path->p[i].x, path->p[i].y);
-    }
-
-    fclose(file);
-}
-
 void freeMaze(Maze* maze) {
     for (uint16_t i = 0; i < maze->rows; i++) {
         free(maze->grid[i]);
@@ -378,20 +262,4 @@ void freeMaze(Maze* maze) {
 
 void freePath(Path* path) {
     free(path->p);
-}
-
-void err(const char* errMessage, ...) {
-    va_list messages;
-
-    va_start(messages, errMessage); /* init arg list */
-    const char* optMessage = va_arg(messages, char*); /* get next arg (if any) */
-    va_end(messages); /* clean up arg list */
-
-    printf("%s\n", errMessage);
-
-    if (optMessage) {
-        printf("%s\n", optMessage);
-    }
-
-    exit(EXIT_FAILURE);
 }
