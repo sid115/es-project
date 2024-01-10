@@ -22,18 +22,19 @@
 #define ERR_FILE              "Error opening file."
 
 /* cell types */
-#define PATH     0
-#define WALL     1
-#define START    2
-#define EXIT     3
-#define SOLUTION 4
+enum {PATH, WALL, START, EXIT, SOLUTION};
 
 typedef struct {
     uint8_t x;
     uint8_t y;
-    uint8_t prevX; /* to track path */
-    uint8_t prevY; /* to track path */
+    short prevX; /* to track path */
+    short prevY; /* to track path */
 } Point;
+
+typedef struct {
+    Point* p;
+    uint16_t size;
+} Path;
 
 typedef struct {
     uint8_t rows;   /* number of rows in maze */
@@ -43,14 +44,17 @@ typedef struct {
     uint8_t** grid; /* pointer to 2D array representing maze */
 } Maze;
 
-void initializeMaze(Maze* maze, uint8_t rows, uint8_t cols, uint8_t startX, uint8_t startY, uint8_t exitX, uint8_t exitY);
-void carveMaze(Maze *maze, uint8_t x, uint8_t y);
-void flipPath(Point* path, uint16_t pathSize);
+void initMaze(Maze* maze, uint8_t rows, uint8_t cols, uint8_t startX, uint8_t startY, uint8_t exitX, uint8_t exitY);
+void initPath(Path* path, uint16_t pathSize);
+void carveMaze(Maze* maze, uint8_t x, uint8_t y);
+void flipPath(Path* path);
 void generateMaze(Maze* maze);
-void solveMaze(Maze* maze, Point* path, const uint16_t pathSize);
+void solveMaze(Maze* maze, Path* path);
+void trimPath(Path* path);
 void writeMaze(Maze* maze, const char* filepath);
-void writePath(Point* path, uint16_t pathSize, const char* filepath);
+void writePath(Path* path, const char* filepath);
 void freeMaze(Maze* maze);
+void freePath(Path* path);
 void err(const char* message, ...);
 
 int main(int argc, char *argv[]) {
@@ -65,6 +69,28 @@ int main(int argc, char *argv[]) {
     uint8_t exitY  = atoi(argv[5]);
     uint8_t exitX  = atoi(argv[6]);
 
+    /* start */
+    Maze maze;
+    initMaze(&maze, rows, cols, startX, startY, exitX, exitY);
+    
+    Path path;
+    initPath(&path, rows * cols); // TODO: can be adjusted to sqrt(rows * cols)?
+
+    generateMaze(&maze);
+    solveMaze(&maze, &path);
+
+    writeMaze(&maze, MAZE_FILEPATH);
+    writePath(&path, PATH_FILEPATH); // TODO: instead of writing to a file, just pass path to animate function
+
+    freeMaze(&maze);
+    freePath(&path);
+
+    return 0;
+}
+
+void initMaze(Maze* maze, uint8_t rows, uint8_t cols, uint8_t startX, uint8_t startY, uint8_t exitX, uint8_t exitY) {
+    uint8_t r, c; /* index variables */
+
     /* check input */
     if (rows == 0) err(ERR_NO_ROWS);                                                                           /* number of rows must be greater than 0 */
     if (cols == 0) err(ERR_NO_COLS);                                                                           /* number of cols must be greater than 0 */
@@ -75,27 +101,6 @@ int main(int argc, char *argv[]) {
     if (!((exitX == 0 || exitX == cols-1) || (exitY == 0 || exitY == rows-1))) err(ERR_EXIT_NOT_ON_EDGE);      /* exit point has to be on edge of maze */
     if ((startX == 0 || startX == cols-1) && (startY == 0 || startY == rows-1)) err(ERR_START_ON_CORNER);      /* start point must not be on corner of maze */
     if ((exitX == 0 || exitX == cols-1) && (exitY == 0 || exitY == rows-1)) err(ERR_EXIT_ON_CORNER);           /* exit point must not be on corner of maze */
-
-    /* start */
-    Maze maze;
-    const uint16_t pathSize = rows * cols; // TODO: can be adjusted to sqrt(rows * cols)? allocate size dynamically?
-    Point* path = malloc(pathSize * sizeof(Point)); /* solution */
-
-    initializeMaze(&maze, rows, cols, startX, startY, exitX, exitY);
-    generateMaze(&maze);
-    solveMaze(&maze, path, pathSize);
-
-    writeMaze(&maze, MAZE_FILEPATH); // TODO: delete for implementation on uC
-    writePath(path, pathSize, PATH_FILEPATH); // TODO: instead of writing to a file, just pass path to animate function
-
-    freeMaze(&maze);
-    free(path);
-
-    return 0;
-}
-
-void initializeMaze(Maze* maze, uint8_t rows, uint8_t cols, uint8_t startX, uint8_t startY, uint8_t exitX, uint8_t exitY) {
-    uint8_t r, c; /* index variables */
 
     maze->rows = rows;
     maze->cols = cols;
@@ -122,11 +127,25 @@ void initializeMaze(Maze* maze, uint8_t rows, uint8_t cols, uint8_t startX, uint
     }
 }
 
+void initPath(Path* path, uint16_t length) {
+    path->p = (Point *) malloc(length * sizeof(Point));
+    
+    if (path == NULL) exit(1);
+    
+    for (uint16_t i = 0; i < length; i++) {
+        path->p[i].x = 0;
+        path->p[i].y = 0;
+        path->p[i].prevX = -1;
+        path->p[i].prevY = -1;
+    }
+    path->size = length;
+}
+
 void carveMaze(Maze *maze, uint8_t x, uint8_t y) {
-    uint8_t x1, y1;
-    uint8_t x2, y2;
-    uint8_t dx, dy;
-    uint8_t dir, count;
+    short x1, y1;
+    short x2, y2;
+    short dx, dy;
+    short dir, count;
 
     dir = rand() % 4;
     count = 0;
@@ -145,7 +164,7 @@ void carveMaze(Maze *maze, uint8_t x, uint8_t y) {
         x2 = x1 + dx;
         y2 = y1 + dy;
         
-        if(x2 > 0 && x2 < maze->cols && y2 > 0 && y2 < maze->rows /* inbounce? */
+        if (x2 > 0 && x2 < maze->cols && y2 > 0 && y2 < maze->rows /* inbounce? */
            && maze->grid[y1][x1] == WALL && maze->grid[y2][x2] == WALL) { /* wall? */
             maze->grid[y1][x1] = PATH;
             maze->grid[y2][x2] = PATH;
@@ -159,27 +178,21 @@ void carveMaze(Maze *maze, uint8_t x, uint8_t y) {
     }
 }
 
-void flipPath(Point* path, uint16_t pathSize) {
-    if (path == NULL) return;
+void flipPath(Path* path) {
+    uint16_t left = 0;
+    uint16_t right = path->size - 1;
+    Point temp;
 
-    /* TODO: allocate with number of non 0s instead of pathSize?  */
-    Point* temp = (Point*) malloc(pathSize * sizeof(Point)); /* temp array */
-    uint16_t i = 0;
-    uint16_t index = 0; /* index of temp array */
-    for (i = pathSize - 1; i >= 0; i--) {
-        if (path[i].x == 0 && path[i].y == 0) { /* only write non 0s */
-            temp[index++] = path[i];
-        }
+    while (left < right) {
+        /* swap elements at left and right indices */
+        temp = path->p[left];
+        path->p[left] = path->p[right];
+        path->p[right] = temp;
+
+        /* move left index to the right and right index to the left */
+        left++;
+        right--;
     }
-
-    /* fill rest with 0s (see TODO) */
-    for (i = index; i < pathSize; i++) {
-        temp[i].x = 0;
-        temp[i].y = 0;
-    }
-
-    path = temp;
-    free(temp);
 }
 
 void generateMaze(Maze* maze) {
@@ -200,8 +213,8 @@ void generateMaze(Maze* maze) {
     maze->grid[maze->exit.y][maze->exit.x] = EXIT;
 }
 
-void solveMaze(Maze* maze, Point* path, const uint16_t pathSize) {
-    if (maze == NULL || maze->grid == NULL || path == NULL) return;
+void solveMaze(Maze* maze, Path* path) {
+    if (maze == NULL || maze->grid == NULL || path == NULL) exit(1);
 
     uint16_t i = 0; /* index var */
     Point current;
@@ -236,8 +249,8 @@ void solveMaze(Maze* maze, Point* path, const uint16_t pathSize) {
             /* trace back path, mark it and write it to solution path */
             while (!(x == start.x && y == start.y)) {
                 maze->grid[y][x] = SOLUTION;
-                path[cnt].x = x;
-                path[cnt].y = y;
+                path->p[cnt].x = x;
+                path->p[cnt].y = y;
                 cnt++;
                 for (i = 0; i < rear; i++) {
                     if (queue[i].x == x && queue[i].y == y) {
@@ -274,7 +287,8 @@ void solveMaze(Maze* maze, Point* path, const uint16_t pathSize) {
         if (rear >= maze->rows * maze->cols) break; /* prevents writing beyond allocated memory */
     }
 
-    //flipPath(path, pathSize); // TODO: seg fault
+    flipPath(path);
+    trimPath(path);
 
     /* clean up */
     for (i = 0; i < maze->rows; i++) {
@@ -284,9 +298,44 @@ void solveMaze(Maze* maze, Point* path, const uint16_t pathSize) {
     free(queue);
 }
 
+void trimPath(Path* path) {
+    uint16_t newSize = 0;
+    uint16_t i = 0; /* index var */
+
+    /* count the non-zero elements in the array */
+    for (i = 0; i < path->size; i++) {
+        if (path->p[i].x != 0 && path->p[i].y != 0) {
+            newSize++;
+        }
+    }
+
+    if (newSize == 0) {
+        path->size = 0;
+    } else {
+        /* create temp array to hold non-zero elements */
+        Path newPath;
+        initPath(&newPath, newSize);
+
+        /* copy non-zero elements to new path */
+        uint16_t newIndex = 0;
+        for (i = 0; i < path->size; i++) {
+            if (path->p[i].x != 0 && path->p[i].y != 0) {
+                newPath.p[newIndex] = path->p[i];
+                newIndex++;
+            }
+        }
+
+        /* copy the contents of newPath to path */
+        for (i = 0; i < newSize; i++) {
+            path->p[i] = newPath.p[i];
+        }
+        path->size = newSize;
+    }
+}
+
 void writeMaze(Maze* maze, const char* filepath) {
     FILE* file = fopen(filepath, "w");
-    int r, c; /* index variables */
+    uint16_t r, c; /* index variables */
 
     if (file == NULL) err(ERR_FILE);
 
@@ -300,24 +349,28 @@ void writeMaze(Maze* maze, const char* filepath) {
     fclose(file);
 }
 
-void writePath(Point* path, uint16_t pathSize, const char* filepath) {
+void writePath(Path* path, const char* filepath) {
     FILE* file = fopen(filepath, "w");
-    int i; /* index variable */
+    uint16_t i; /* index variable */
 
     if (file == NULL) err(ERR_FILE);
 
-    for (i = 0; i < pathSize; i++) {
-        fprintf(file, "%d %d\n", path[i].x, path[i].y);
+    for (i = 0; i < path->size; i++) {
+        fprintf(file, "%d %d\n", path->p[i].x, path->p[i].y);
     }
 
     fclose(file);
 }
 
 void freeMaze(Maze* maze) {
-    for (int i = 0; i < maze->rows; i++) {
+    for (uint16_t i = 0; i < maze->rows; i++) {
         free(maze->grid[i]);
     }
     free(maze->grid);
+}
+
+void freePath(Path* path) {
+    free(path->p);
 }
 
 void err(const char* errMessage, ...) {
