@@ -17,10 +17,7 @@ void ws2812_init(void)
 // set one pixel to given color
 void ws2812_pixel(uint8_t _x, uint8_t _y, ColorRGB_t* color)
 {
-  uint16_t index = coord2Index(_x, _y);
-  if (index >= 63) index--;
-  //uint8_t* ptr = &ws2812_buffer[24 * coord2Index(_x, _y)];
-  uint8_t* ptr = &ws2812_buffer[24 * index];
+  uint8_t* ptr = &ws2812_buffer[24 * coord2Index(_x, _y)];
   WS2812_FILL_BUFFER(color->g);
   WS2812_FILL_BUFFER(color->r);
   WS2812_FILL_BUFFER(color->b);
