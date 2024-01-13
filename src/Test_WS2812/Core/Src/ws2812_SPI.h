@@ -2,6 +2,11 @@
 #ifndef SRC_WS2812_SPI_H_
 #define SRC_WS2812_SPI_H_
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include "main.h"
+
 #define WS2812_NUM_LEDS_X 40
 #define WS2812_NUM_LEDS_Y 24
 

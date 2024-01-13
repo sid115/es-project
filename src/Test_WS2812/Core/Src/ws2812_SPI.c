@@ -1,6 +1,3 @@
-#include <string.h>
-#include <stdlib.h>
-#include "main.h"
 #include "ws2812_SPI.h"
 
 uint8_t ws2812_buffer[WS2812_BUFFER_SIZE];
@@ -10,8 +7,7 @@ void ws2812_init(void)
 {
   memset(ws2812_buffer, 0, WS2812_BUFFER_SIZE); // fill buffer with 0s
   HAL_SPI_Transmit_DMA(&hspi2, ws2812_buffer, WS2812_BUFFER_SIZE); // write buffer to LEDs
-  ColorRGB_t color = {0, 0, 0};
-  ws2812_pixel_all(&color); // set LEDs to black
+  ws2812_pixel_all(&(ColorRGB_t){0, 0, 0}); // set LEDs to black
 }
 
 // set one pixel to given color

@@ -11,8 +11,8 @@ typedef struct {
     uint size;
 } PseudoRNG;
 
-void initPRNG();
-uint getRand();
+void initPRNG(PseudoRNG* rng, uint* numbers, uint size);
+uint getRand(PseudoRNG *rng);
 
 /* use main for testing */
 int main(int argc, char *argv[]) {

@@ -21,9 +21,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "math.h"
 #include "ws2812_SPI.h"
 #include "maze.h"
+#include "numbers.h"
+#include "prng.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,6 +35,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define NUM_COLORS 17 // 16 pkg colors + black
+#define ANIMATION_DELAY_MS 30 // time in ms an animation should take
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -109,10 +111,10 @@ int main(void)
   //ColorRGB_t* pixel[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X] = {0}; // fill with &color[C_COLOR]
                                                                 
   /* maze vars */
-  uint8_t startX = 0;
-  uint8_t startY = 12;
-  uint8_t exitX = 39;
-  uint8_t exitY = 15;
+  uint8_t startX = 1;
+  uint8_t startY = 0;
+  uint8_t exitX = WS2812_NUM_LEDS_X - 2;
+  uint8_t exitY = WS2812_NUM_LEDS_Y - 1;
 
   uint16_t i = 0, x = 0, y = 0; // index variables
   /* USER CODE END 1 */
@@ -130,7 +132,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  SystemInit();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -144,36 +146,54 @@ int main(void)
   ws2812_init();
   initMaze(&maze, WS2812_NUM_LEDS_Y, WS2812_NUM_LEDS_X, startX, startY, exitX, exitY);
   initPath(&path, WS2812_NUM_LEDS_Y * WS2812_NUM_LEDS_X);
-  
-  generateMaze(&maze);
-  solveMaze(&maze, &path);
-
-  /* write maze to matrix */
-  for (x = 0; x < WS2812_NUM_LEDS_X; x++)
-  {
-    for (y = 0; y < WS2812_NUM_LEDS_Y; y++)
-    {
-      if (maze.grid[y][x] == WALL)
-      {
-        ws2812_pixel(x, y, &(ColorRGB_t){15, 15, 15}); // C_WHITE is too bright
-      }
-    }
-  } 
+  initPRNG(&rng, numbers, SIZE_NUMBERS);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  i = 0;
   while (1)
   {
     /* USER CODE END WHILE */
-    ws2812_pixel(path.p[i].x, path.p[i].y, &color[C_YELLOW]); // TODO: start point is not in path
-    HAL_Delay(50);
-    ws2812_pixel(path.p[i].x, path.p[i].y, &color[C_BLACK]);
-
-    i++;
-    if (i == path.size) i = 0;
     /* USER CODE BEGIN 3 */
+	/* reset panel to black */
+	ws2812_pixel_all(&color[C_BLACK]);
+
+	/* set start and end point */
+    //startX++;
+    //if (startX == WS2812_NUM_LEDS_X - 1) startX = 1;
+    //exitX--;
+    //if (exitX == 0) exitX = WS2812_NUM_LEDS_X - 2;
+
+	/* set new start and exit */
+    maze.start.x = startX; maze.start.y = startY;
+    maze.exit.x = exitX; maze.exit.y = exitY;
+
+	/* generate and solve maze */
+	generateMaze(&maze);
+	solveMaze(&maze, &path);
+
+	/* write maze */
+	for (x = 0; x < WS2812_NUM_LEDS_X; x++)
+	{
+	  for (y = 0; y < WS2812_NUM_LEDS_Y; y++)
+	  {
+	    if (maze.grid[y][x] == WALL) ws2812_pixel(x, y, &(ColorRGB_t){15, 15, 15}); // C_WHITE is too bright
+	  }
+	}
+
+	/* solve maze */
+	for (i = path.size - 1; i >= 1; i--)
+	{
+      if (path.p[i].x != 0 && path.p[i].y != 0)
+      {
+        ws2812_pixel(path.p[i].x, path.p[i].y, &color[C_RED]); // TODO: start point is not in path
+        HAL_Delay(ANIMATION_DELAY_MS);
+      }
+	}
+
+    /* reset */
+    resetMaze(&maze, startX, startY, exitX, exitY);
+    resetPath(&path);
   }
   /* USER CODE END 3 */
 }
