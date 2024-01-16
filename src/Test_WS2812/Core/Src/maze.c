@@ -2,6 +2,7 @@
 #include "prng.h"
 #include "ram_usage.h" // testing
 #include "ws2812_SPI.h" // static allocation
+#include<stdio.h>
 
 Maze maze;
 Path path;
@@ -152,6 +153,7 @@ void generateMaze(Maze* maze) {
 }
 
 void solveMaze(Maze* maze, Path* path) {
+	int iterations = 0;
 
     if (maze == NULL || maze->grid == NULL || path == NULL) exit(1);
 
@@ -236,6 +238,8 @@ void solveMaze(Maze* maze, Path* path) {
         }
         /* break if writing beyond allocated memory */
         if (rear >= maze->rows * maze->cols) break;
+        iterations++;
+        printf("%d \n", iterations);
     }
 
     /* clean up */

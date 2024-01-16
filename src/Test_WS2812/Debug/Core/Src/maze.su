@@ -1,8 +1,8 @@
-../Core/Src/maze.c:9:6:initMaze	24	static
-../Core/Src/maze.c:30:6:resetMaze	24	static
-../Core/Src/maze.c:58:6:initPath	16	static
-../Core/Src/maze.c:68:6:resetPath	24	static
-../Core/Src/maze.c:77:6:pathPush	24	static
-../Core/Src/maze.c:86:6:carveMaze	48	static
-../Core/Src/maze.c:139:6:generateMaze	24	static
-../Core/Src/maze.c:154:6:solveMaze	224	static
+../Core/Src/maze.c:10:6:initMaze	24	static
+../Core/Src/maze.c:31:6:resetMaze	24	static
+../Core/Src/maze.c:59:6:initPath	16	static
+../Core/Src/maze.c:69:6:resetPath	24	static
+../Core/Src/maze.c:78:6:pathPush	24	static
+../Core/Src/maze.c:87:6:carveMaze	48	static
+../Core/Src/maze.c:140:6:generateMaze	24	static
+../Core/Src/maze.c:155:6:solveMaze	232	static

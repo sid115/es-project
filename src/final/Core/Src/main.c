@@ -30,11 +30,12 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include "ws2812_SPI.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-//TODO: what if busy in state and receives ap nr other than 50 (poll)??? Dürfen prozesse kontrolllflüsse zurücksetzen??
+//TODO: ??? Dürfen prozesse kontrolllflüsse zurücksetzen??
 typedef uint8_t crc;
 typedef enum {FALSE, TRUE} BOOL;
 
@@ -85,6 +86,7 @@ typedef union
 #define NEOPIXEL_ONE 67
 #define NUM_PIXELS 8
 #define DMA_BUFF_SIZE (NUM_PIXELS * 24) + 1
+#define BLINK_TIME 500
 
 //* Packet forwarding defines *//
 #define NUM_NEIGHBOURS 4
@@ -97,6 +99,9 @@ typedef union
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+SPI_HandleTypeDef hspi2;
+DMA_HandleTypeDef hdma_spi2_tx;
+
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 DMA_HandleTypeDef hdma_tim2_ch3_up;
@@ -179,6 +184,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_SPI2_Init(void);
 /* USER CODE BEGIN PFP */
 void AL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
@@ -413,46 +419,31 @@ void animateReceive(void){
 	writeLEDs(pixels);
 }
 void animateCreate(void){
-
-	BOOL on = FALSE;
-	BOOL wait = FALSE;
 	uint8_t i = 0;
 
-	// find index of tempLager, were packageId is stored
+	// find index of tempLager, where packageId is stored
 	for(i = 0; i < LAGER_SIZE; i++){
 		if(tempLager[i] == packageId){
 			break;
 		}
 	}
 
+	// TODO: weird thing with blinking and then disappearing until next package happens again
 	// blink corresponding LED once
-	timer_irq = FALSE;
-	while(1){
-		if(timer_irq && !on && !wait){
-			timer_irq = FALSE;
-			on = TRUE;
-			pixels[i+1].color.g = (uint8_t)LEDColors[packageId][1]*0.1; // TODO: SA/RT
-			pixels[i+1].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
-			pixels[i+1].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
-			writeLEDs(pixels);
-		}
-		if(timer_irq && on && !wait){
-			timer_irq = FALSE;
-			wait = TRUE;
-			pixels[i+1].color.g = 0; // TODO: SA/RT
-			pixels[i+1].color.r = 0;
-			pixels[i+1].color.b = 0;
-			writeLEDs(pixels);
-		}
-		if(timer_irq && wait){
-			break;
-		}
-
-	}
+	pixels[i+1].color.g = (uint8_t)LEDColors[packageId][1]*0.1;
+	pixels[i+1].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
+	pixels[i+1].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
+	writeLEDs(pixels);
+	HAL_Delay(BLINK_TIME);
+	pixels[i+1].color.g = 0;
+	pixels[i+1].color.r = 0;
+	pixels[i+1].color.b = 0;
+	writeLEDs(pixels);
+	HAL_Delay(BLINK_TIME);
 
 	// display current Lager
 	for(i = 0; i < LAGER_SIZE; i++){
-		pixels[i+1].color.g = (uint8_t)LEDColors[tempLager[i]][1]*0.1; //TODO: greift auch auf temp
+		pixels[i+1].color.g = (uint8_t)LEDColors[tempLager[i]][1]*0.1;
 		pixels[i+1].color.r = (uint8_t)LEDColors[tempLager[i]][0]*0.1;
 		pixels[i+1].color.b = (uint8_t)LEDColors[tempLager[i]][2]*0.1;
 
@@ -477,7 +468,7 @@ void animateDeliver(void){
 		if(timer_irq && !on && !wait){
 			timer_irq = FALSE;
 			on = TRUE;
-			pixels[i+1].color.g = (uint8_t)LEDColors[packageId][1]*0.1; // TODO: SA/RT
+			pixels[i+1].color.g = (uint8_t)LEDColors[packageId][1]*0.1;
 			pixels[i+1].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
 			pixels[i+1].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
 			writeLEDs(pixels);
@@ -485,7 +476,7 @@ void animateDeliver(void){
 		if(timer_irq && on && !wait){
 			timer_irq = FALSE;
 			wait = TRUE;
-			pixels[i+1].color.g = 0; // TODO: SA/RT
+			pixels[i+1].color.g = 0;
 			pixels[i+1].color.r = 0;
 			pixels[i+1].color.b = 0;
 			writeLEDs(pixels);
@@ -804,12 +795,6 @@ void pat(void){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	/*
-	// Debug variables
-	char buf[200];
-	long lastMillis = 0;
-	long millis = 0;
-	*/
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -835,9 +820,11 @@ int main(void)
   MX_USART1_UART_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 	HAL_UART_Receive_IT(&huart1, rx_buf, L1_PDU_size);
     HAL_TIM_Base_Start_IT(&htim3);
+    ws2812_init();
 	// Zustandsuebergangsdiagramm reset
 	zustand = Z_idle;
 	aktion = A_idle;
@@ -850,29 +837,15 @@ int main(void)
 		pixels[i].color.b = 0;
 	}
 	writeLEDs(pixels);
+
+	//ws2812_pixel_all(&(ColorRGB_t){20, 20, 20});
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-
     /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-		/* DEBUG Output on USART2
-		millis = HAL_GetTick(); // get current elapsed time in milliseconds
-
-		// rising edge at button pin was detected and DEBOUNCE_INTERVAL has elapsed since last rising edge
-		if ((millis - lastMillis) > 500){
-			sprintf (buf, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", state, errorId, partnerId, packageId, Lager[0], Lager[1], Lager[2], Lager[3], Lager[4], Lager[5],
-							tempLager[0], tempLager[1], tempLager[2], tempLager[3], tempLager[4], tempLager[5], flag_send, flag_await, receive,
-							passOn, create, deliver, poll, await, finishedSend, finishedStore, failure, receivedSDU, GPIO_neighbour_in);
-			HAL_UART_Transmit_IT(&huart2, buf, strlen(buf));
-			lastMillis = millis;
-		}
-		*/
-
 	  std();
 	  pat();
 	}
@@ -923,6 +896,44 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief SPI2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI2_Init(void)
+{
+
+  /* USER CODE BEGIN SPI2_Init 0 */
+
+  /* USER CODE END SPI2_Init 0 */
+
+  /* USER CODE BEGIN SPI2_Init 1 */
+
+  /* USER CODE END SPI2_Init 1 */
+  /* SPI2 parameter configuration*/
+  hspi2.Instance = SPI2;
+  hspi2.Init.Mode = SPI_MODE_MASTER;
+  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi2.Init.NSS = SPI_NSS_SOFT;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi2.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI2_Init 2 */
+
+  /* USER CODE END SPI2_Init 2 */
+
 }
 
 /**
@@ -1108,6 +1119,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
+  /* DMA1_Stream4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
 
 }
 
@@ -1140,11 +1154,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : R_N1_Pin R_N2_Pin R_N3_Pin R_N4_Pin */
-  GPIO_InitStruct.Pin = R_N1_Pin|R_N2_Pin|R_N3_Pin|R_N4_Pin;
+  /*Configure GPIO pins : R_N1_Pin R_N3_Pin */
+  GPIO_InitStruct.Pin = R_N1_Pin|R_N3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : R_N2_Pin */
+  GPIO_InitStruct.Pin = R_N2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(R_N2_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LD2_Pin */
   GPIO_InitStruct.Pin = LD2_Pin;
@@ -1160,6 +1180,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : R_N4_Pin */
+  GPIO_InitStruct.Pin = R_N4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(R_N4_GPIO_Port, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
@@ -1169,9 +1195,6 @@ static void MX_GPIO_Init(void)
 
   HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI2_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);

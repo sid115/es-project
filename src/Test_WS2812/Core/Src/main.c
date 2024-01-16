@@ -25,6 +25,7 @@
 #include "maze.h"
 #include "numbers.h"
 #include "prng.h"
+#include<stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -78,7 +79,13 @@ static void MX_SPI2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+int _write(int file, char *ptr, int len) {
+  int DataIdx;
+  for (DataIdx = 0; DataIdx < len; DataIdx++) {
+    ITM_SendChar(*ptr++);
+  }
+  return len;
+}
 /* USER CODE END 0 */
 
 /**
@@ -88,6 +95,7 @@ static void MX_SPI2_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
   ColorRGB_t color[NUM_COLORS] = {
   /* B    R    G   */
     {255, 255, 255}, // C_WHITE
@@ -155,6 +163,7 @@ int main(void)
   {
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
+	  printf("Hello World \n");
 	/* reset panel to black */
 	ws2812_pixel_all(&color[C_BLACK]);
 
