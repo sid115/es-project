@@ -1,5 +1,4 @@
-Core/Src/maze.o: ../Core/Src/maze.c ../Core/Src/maze.h \
- ../Core/Src/ws2812_SPI.h ../Core/Inc/main.h \
+Core/Src/main_backup.o: ../Core/Src/main_backup.c ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
@@ -29,9 +28,7 @@ Core/Src/maze.o: ../Core/Src/maze.c ../Core/Src/maze.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Src/prng.h
-../Core/Src/maze.h:
-../Core/Src/ws2812_SPI.h:
+ ../Core/Src/ws2812_SPI.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -62,4 +59,4 @@ Core/Src/maze.o: ../Core/Src/maze.c ../Core/Src/maze.h \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
-../Core/Src/prng.h:
+../Core/Src/ws2812_SPI.h:

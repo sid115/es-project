@@ -27,20 +27,32 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ws2812_SPI.h"
+
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
-#include "ws2812_SPI.h"
-#include "maze.h"
-#include "numbers.h"
-#include "prng.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-//TODO: ??? Dürfen prozesse kontrolllflüsse zurücksetzen??
+//TODO: what if busy in state and receives ap nr other than 50 (poll)??? Dürfen prozesse kontrolllflüsse zurücksetzen??
 typedef uint8_t crc;
 typedef enum {FALSE, TRUE} BOOL;
+
+/* LED stuff */
+/*
+typedef union
+{
+  struct
+  {
+    uint8_t b;
+    uint8_t r;
+    uint8_t g;
+  } color;
+  uint32_t data;
+} PixelRGB_t;
+*/
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -77,33 +89,10 @@ typedef enum {FALSE, TRUE} BOOL;
 #define NEOPIXEL_ONE 67
 #define NUM_PIXELS 8
 #define DMA_BUFF_SIZE (NUM_PIXELS * 24) + 1
-#define BLINK_TIME 500
-#define NUM_COLORS 17 // 16 pkg colors + black
-#define ANIMATION_DELAY_MS 30 // time in ms an animation should take
-enum {
-  C_BLACK,                              // do not change
-  C_WHITE, C_RED, C_GREEN, C_BLUE,      // do not change
-  C_CYAN, C_MAGENTA, C_YELLOW, C_BROWN, // do not change
-  C_LIME, C_OLIVE, C_ORANGE, C_PINK,    // do not change
-  C_PURPLE, C_TEAL, C_VIOLET, C_MAUVE,  // do not change
-  /* add more colors as you see fit */
-};
 
 //* Packet forwarding defines *//
 #define NUM_NEIGHBOURS 4
 #define LAGER_SIZE 6
-
-// Start and Exit Nodes
-#define NEIGHBOUR_W_X 0
-#define NEIGHBOUR_W_Y (WS2812_NUM_LEDS_Y / 2)
-#define NEIGHBOUR_S_X (WS2812_NUM_LEDS_X / 2)
-#define NEIGHBOUR_S_Y (WS2812_NUM_LEDS_Y - 1)
-#define NEIGHBOUR_E_X (WS2812_NUM_LEDS_X - 1)
-#define NEIGHBOUR_E_Y (WS2812_NUM_LEDS_Y / 2)
-#define STORAGE_INBOUND_X 17
-#define STORAGE_INBOUND_Y 0
-#define STORAGE_OUTBOUND_X (STORAGE_INBOUND_X + 4)
-#define STORAGE_OUTBOUND_Y 0
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -124,7 +113,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 /* GLOBALS */
-uint8_t myAddress = 1; // Board address
+uint8_t myAddress = 12; // Board address
 
 bool rx_complete = 0; // TRUE, when serial receive is complete and HAL_UART_RxCpltCallback is called
 bool tx_complete = 0; // TRUE, when serial transmit is complete and HAL_UART_TxCpltCallback is called
@@ -145,36 +134,14 @@ uint8_t LEDColors[17][3] = { {0, 0, 0}, {255, 255, 255},  {255, 0, 0},
 		 {191, 255, 0},  {128, 128, 0},  {255, 128, 0},
 		 {255, 191, 191},  {191, 0, 64},  {0, 128, 128},
 		 {128, 0, 128},  {224, 176, 255} };
-PixelRGB_t color[NUM_COLORS] = {
-/*   B    R    G   */
-  { {0,   0,   0  } }, // C_BLACK
-  { {255, 255, 255} }, // C_WHITE
-  { {0,   255, 0  } }, // C_RED
-  { {0,   0,   255} }, // C_GREEN
-  { {255, 0,   0  } }, // C_BLUE
-  { {255, 0,   255} }, // C_CYAN
-  { {255, 255, 0  } }, // C_MAGENTA
-  { {0,   255, 255} }, // C_YELLOW
-  { {64,  191, 128} }, // C_BROWN
-  { {0,   191, 255} }, // C_LIME
-  { {0,   128, 128} }, // C_OLIVE
-  { {0,   255, 128} }, // C_ORANGE
-  { {191, 255, 191} }, // C_PINK
-  { {64,  191, 0  } }, // C_PURPLE
-  { {128, 0,   128} }, // C_TEAL
-  { {128, 128, 0  } }, // C_VIOLET
-  { {128, 128, 0  } }  // C_MAUVE
-};
 PixelRGB_t pixels[NUM_PIXELS] = {0}; // TODO: SA/RT
 BOOL timer_irq = FALSE; // gets set HIGH every 750ms
 
 //BOOL count = FALSE;
 
 // Utility for ISR (not specified in SA/RT)
-const uint16_t neighbourSendPins[NUM_NEIGHBOURS] = {S_N1_Pin, S_N2_Pin, S_N3_Pin, S_N4_Pin};
-const uint16_t neighbourReceivePins[NUM_NEIGHBOURS] = {R_N1_Pin, R_N2_Pin, R_N3_Pin, R_N4_Pin};
-const uint16_t neighbourReceivePorts[NUM_NEIGHBOURS] = {R_N1_GPIO_Port, R_N2_GPIO_Port, R_N3_GPIO_Port, R_N4_GPIO_Port};
-const uint8_t neighbourIDs[NUM_NEIGHBOURS] = {3, 0, 0, 0}; // 0, if no neighbour at Pin // Input Pins are: R_N1_Pin, R_N2_Pin, R_N3_Pin, R_N4_Pin
+uint16_t neighbourSendPins[NUM_NEIGHBOURS] = {S_N1_Pin, S_N2_Pin, S_N3_Pin, S_N4_Pin};
+const uint8_t neighbourIDs[NUM_NEIGHBOURS] = {1, 0, 0, 0}; // 0, if no neighbour at Pin // Input Pins are: R_N1_Pin, R_N2_Pin, R_N3_Pin, R_N4_Pin
 
 //* Packet forwarding begin *//
 
@@ -344,6 +311,7 @@ void handleSend(void){
 		tempLager[i] = Lager[i];
 	}
 
+
 	// delete package out of tempLager
 	for(i = 0; i < LAGER_SIZE; i++){
 		if(tempLager[i] == packageId){
@@ -363,100 +331,188 @@ void updateLager(void){
 	}
 }
 void animateSend(void){
+	BOOL on = FALSE;
+	BOOL wait = FALSE;
 	uint8_t i = 0;
 
-	// find index of Lager, where packageId is stored
+	// find index of Lager, were packageId was stored //TODO: SA/RT Lager noch rein!!
 	for(i = 0; i < LAGER_SIZE; i++){
 		if(Lager[i] == packageId){
 			break;
 		}
 	}
 
-	// skip any but first function call
-	if (i == LAGER_SIZE) return;
+	// turn off corresponding LED
+	pixels[i+1].color.g = 0; // TODO: SA/RT
+	pixels[i+1].color.r = 0;
+	pixels[i+1].color.b = 0;
+	writeLEDs(pixels);
 
-	// blink corresponding LED once
-    pixels[i+1] = color[C_BLACK];
-	writeLEDs(pixels);
-	HAL_Delay(BLINK_TIME);
-    pixels[LAGER_SIZE+1] = color[packageId];
-	writeLEDs(pixels);
-	HAL_Delay(BLINK_TIME);
-    pixels[LAGER_SIZE+1] = color[C_BLACK];
+
+	// blink last (outgoing) LED once
+	timer_irq = FALSE;
+	while(1){
+		if(timer_irq && !on && !wait){
+			timer_irq = FALSE;
+			on = TRUE;
+			pixels[7].color.g = (uint8_t)LEDColors[packageId][1]*0.1; // TODO: SA/RT
+			pixels[7].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
+			pixels[7].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
+			writeLEDs(pixels);
+		}
+		if(timer_irq && on && !wait){
+			timer_irq = FALSE;
+			wait = TRUE;
+			pixels[7].color.g = 0; // TODO: SA/RT
+			pixels[7].color.r = 0;
+			pixels[7].color.b = 0;
+			writeLEDs(pixels);
+		}
+		if(timer_irq && wait){
+			break;
+		}
+	}
+
+	// display current Lager
+	for(i = 0; i < LAGER_SIZE; i++){
+		pixels[i+1].color.g = (uint8_t)LEDColors[tempLager[i]][1]*0.1;
+		pixels[i+1].color.r = (uint8_t)LEDColors[tempLager[i]][0]*0.1;
+		pixels[i+1].color.b = (uint8_t)LEDColors[tempLager[i]][2]*0.1;
+
+	}
 	writeLEDs(pixels);
 }
 
 void animateReceive(void){
-	uint8_t i = 0;
+	BOOL on = FALSE;
+	BOOL wait = FALSE;
 
-	// find index of tempLager, where packageId is stored
-	for(i = 0; i < LAGER_SIZE; i++){
-		if(tempLager[i] == packageId){
+	// blink first (incoming) LED once
+	timer_irq = FALSE;
+	while(1){
+		if(timer_irq && !on && !wait){
+			timer_irq = FALSE;
+			on = TRUE;
+			pixels[0].color.g = (uint8_t)LEDColors[packageId][1]*0.1; // TODO: SA/RT
+			pixels[0].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
+			pixels[0].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
+			writeLEDs(pixels);
+		}
+		if(timer_irq && on && !wait){
+			timer_irq = FALSE;
+			wait = TRUE;
+			pixels[0].color.g = 0; // TODO: SA/RT
+			pixels[0].color.r = 0;
+			pixels[0].color.b = 0;
+			writeLEDs(pixels);
+		}
+		if(timer_irq && wait){
 			break;
 		}
 	}
 
-	// skip any but first function call
-	if (i == LAGER_SIZE) return;
+	// display current Lager
+	for(int i = 0; i < LAGER_SIZE; i++){
+		pixels[i+1].color.g = (uint8_t)LEDColors[tempLager[i]][1]*0.1;
+		pixels[i+1].color.r = (uint8_t)LEDColors[tempLager[i]][0]*0.1;
+		pixels[i+1].color.b = (uint8_t)LEDColors[tempLager[i]][2]*0.1;
 
-	// blink corresponding LED once
-    pixels[0] = color[packageId];
-	writeLEDs(pixels);
-	HAL_Delay(BLINK_TIME);
-    pixels[0] = color[C_BLACK];
-	writeLEDs(pixels);
-	HAL_Delay(BLINK_TIME);
-    pixels[i+1] = color[packageId];
+	}
 	writeLEDs(pixels);
 }
-
 void animateCreate(void){
+
+	BOOL on = FALSE;
+	BOOL wait = FALSE;
 	uint8_t i = 0;
 
-	// find index of tempLager, where packageId is stored
+	// find index of tempLager, were packageId is stored
 	for(i = 0; i < LAGER_SIZE; i++){
 		if(tempLager[i] == packageId){
 			break;
 		}
 	}
 
-	// skip any but first function call
-	if (i == LAGER_SIZE) return;
-
 	// blink corresponding LED once
-    pixels[i+1] = color[packageId];
-	writeLEDs(pixels);
-	HAL_Delay(BLINK_TIME);
-    pixels[i+1] = color[C_BLACK];
-	writeLEDs(pixels);
-	HAL_Delay(BLINK_TIME);
-    pixels[i+1] = color[packageId];
+	timer_irq = FALSE;
+	while(1){
+		if(timer_irq && !on && !wait){
+			timer_irq = FALSE;
+			on = TRUE;
+			pixels[i+1].color.g = (uint8_t)LEDColors[packageId][1]*0.1; // TODO: SA/RT
+			pixels[i+1].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
+			pixels[i+1].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
+			writeLEDs(pixels);
+		}
+		if(timer_irq && on && !wait){
+			timer_irq = FALSE;
+			wait = TRUE;
+			pixels[i+1].color.g = 0; // TODO: SA/RT
+			pixels[i+1].color.r = 0;
+			pixels[i+1].color.b = 0;
+			writeLEDs(pixels);
+		}
+		if(timer_irq && wait){
+			break;
+		}
+
+	}
+
+	// display current Lager
+	for(i = 0; i < LAGER_SIZE; i++){
+		pixels[i+1].color.g = (uint8_t)LEDColors[tempLager[i]][1]*0.1; //TODO: greift auch auf temp
+		pixels[i+1].color.r = (uint8_t)LEDColors[tempLager[i]][0]*0.1;
+		pixels[i+1].color.b = (uint8_t)LEDColors[tempLager[i]][2]*0.1;
+
+	}
 	writeLEDs(pixels);
 }
 void animateDeliver(void){
+	BOOL on = FALSE;
+	BOOL wait = FALSE;
 	uint8_t i = 0;
 
-	// find index of Lager, where packageId is stored
+	// find index of Lager, were packageId was stored //TODO: SA/RT Lager noch rein!!
 	for(i = 0; i < LAGER_SIZE; i++){
 		if(Lager[i] == packageId){
 			break;
 		}
 	}
 
-	// skip any but first function call
-	if (i == LAGER_SIZE) return;
-
 	// blink corresponding LED once
-    pixels[i+1] = color[C_BLACK];
-	writeLEDs(pixels);
-	HAL_Delay(BLINK_TIME);
-    pixels[i+1] = color[packageId];
-	writeLEDs(pixels);
-	HAL_Delay(BLINK_TIME);
-    pixels[i+1] = color[C_BLACK];
+	timer_irq = FALSE;
+	while(1){
+		if(timer_irq && !on && !wait){
+			timer_irq = FALSE;
+			on = TRUE;
+			pixels[i+1].color.g = (uint8_t)LEDColors[packageId][1]*0.1; // TODO: SA/RT
+			pixels[i+1].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
+			pixels[i+1].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
+			writeLEDs(pixels);
+		}
+		if(timer_irq && on && !wait){
+			timer_irq = FALSE;
+			wait = TRUE;
+			pixels[i+1].color.g = 0; // TODO: SA/RT
+			pixels[i+1].color.r = 0;
+			pixels[i+1].color.b = 0;
+			writeLEDs(pixels);
+		}
+		if(timer_irq && wait){
+			break;
+		}
+
+	}
+
+	// display current Lager
+	for(int i = 0; i < LAGER_SIZE; i++){
+		pixels[i+1].color.g = (uint8_t)LEDColors[tempLager[i]][1]*0.1;
+		pixels[i+1].color.r = (uint8_t)LEDColors[tempLager[i]][0]*0.1;
+		pixels[i+1].color.b = (uint8_t)LEDColors[tempLager[i]][2]*0.1;
+
+	}
 	writeLEDs(pixels);
 }
-
 void pulse(void){
 	uint8_t partnerNumber = 0;
 	uint8_t i = 0;
@@ -471,7 +527,7 @@ void pulse(void){
 
 	// toggle corresponding pin for 1ms // TODO: actually implement pulse with a state between passOn and sent (passOnPulse or something) and a timer
 	HAL_GPIO_WritePin (GPIOC, neighbourSendPins[partnerNumber], GPIO_PIN_SET);
-	HAL_Delay(1);
+	HAL_Delay(5);
 	HAL_GPIO_WritePin (GPIOC, neighbourSendPins[partnerNumber], GPIO_PIN_RESET);
 }
 void checkFailure(void){
@@ -567,6 +623,7 @@ void resetData(){
 	finishedStore = FALSE;
 	finishedSend = FALSE;
 	receivedSDU = FALSE;
+	GPIO_neighbour_in = FALSE;
 }
 
 // STD
@@ -582,13 +639,6 @@ void std(void){
 			aktion = A_idle;
 			poll = FALSE; //*
 		}
-		/*
-		else if((!poll) && (!receivedSDU)){
-			aktion = A_idle; // so it is not stuck in A_reset
-		}
-		else if(!receivedSDU){
-			aktion = A_idle; // so it is not stuck in A_reset
-		}*/
 		break;
 
 
@@ -616,10 +666,6 @@ void std(void){
 			zustand = Z_failure;
 			poll = FALSE; //*
 		}
-		/*
-		else{
-			aktion = A_idle; // TODO: why do we need this so failure for unknown neighbour works??
-		}*/
 		break;
 
 	case Z_failure:
@@ -655,7 +701,7 @@ void std(void){
 		break;
 
 	case Z_awaiting: // TODO: no GPIO needed for going from awating to send?? maybe something to do with pull up, but it used to work?
-		if (GPIO_neighbour_in && await){
+		if (GPIO_neighbour_in && await && !finishedStore){ //TODO: SA/RT finished store
 			aktion = A_handleStore;
 			GPIO_neighbour_in = FALSE; //*
 		}
@@ -707,7 +753,15 @@ void pat(void){
 		break;
 	case A_pulse:
 		animateSend();
+		HAL_Delay(3000);
+		PixelRGB_t pixel;
+		// Access the members through the color struct
+		pixel.color.r = 0;
+		pixel.color.g = 20;
+		pixel.color.b = 20;
 		pulse();
+		ws2812_pixel_all(&pixel);
+		HAL_Delay(1000);
 		updateLager();
 		stateSent();
 		break;
@@ -756,15 +810,12 @@ void pat(void){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  //ColorRGB_t* pixel[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X] = {0}; // fill with &color[C_COLOR]
-                                                                
-  /* maze vars */
-  uint8_t startX = 1;
-  uint8_t startY = 0;
-  uint8_t exitX = WS2812_NUM_LEDS_X - 2;
-  uint8_t exitY = WS2812_NUM_LEDS_Y - 1;
-
-  uint16_t i = 0, x = 0, y = 0; // index variables
+	/*
+	// Debug variables
+	char buf[200];
+	long lastMillis = 0;
+	long millis = 0;
+	*/
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -792,33 +843,43 @@ int main(void)
   MX_TIM3_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Receive_IT(&huart1, rx_buf, L1_PDU_size);
-  HAL_TIM_Base_Start_IT(&htim3);
-  ws2812_init();
-  initMaze(&maze, WS2812_NUM_LEDS_Y, WS2812_NUM_LEDS_X, startX, startY, exitX, exitY);
-  initPath(&path, WS2812_NUM_LEDS_Y * WS2812_NUM_LEDS_X);
-  initPRNG(&rng, numbers, SIZE_NUMBERS);
+	HAL_UART_Receive_IT(&huart1, rx_buf, L1_PDU_size);
+    HAL_TIM_Base_Start_IT(&htim3);
 	// Zustandsuebergangsdiagramm reset
 	zustand = Z_idle;
 	aktion = A_idle;
 	pat();
-    
-	// Reset storage LEDs
-	for(i = 0; i < LAGER_SIZE; i++){
-		pixels[i] = color[C_BLACK];
+
+	// Reset LEDs
+	for(int i = 0; i < NUM_PIXELS; i++){
+		pixels[i].color.g = 0;
+		pixels[i].color.r = 0;
+		pixels[i].color.b = 0;
 	}
 	writeLEDs(pixels);
+
+	ws2812_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1)
+	{
+
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
-	std();
-	pat();
-  }
+
+		PixelRGB_t pixel;
+		// Access the members through the color struct
+		pixel.color.r = 20;
+		pixel.color.g = 20;
+		pixel.color.b = 0;
+
+		ws2812_pixel_all(&pixel);
+	  std();
+	  pat();
+	}
   /* USER CODE END 3 */
 }
 
@@ -1124,17 +1185,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : R_N1_Pin R_N3_Pin */
-  GPIO_InitStruct.Pin = R_N1_Pin|R_N3_Pin;
+  /*Configure GPIO pins : R_N1_Pin R_N2_Pin R_N3_Pin R_N4_Pin */
+  GPIO_InitStruct.Pin = R_N1_Pin|R_N2_Pin|R_N3_Pin|R_N4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : R_N2_Pin */
-  GPIO_InitStruct.Pin = R_N2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(R_N2_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LD2_Pin */
   GPIO_InitStruct.Pin = LD2_Pin;
@@ -1150,12 +1205,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : R_N4_Pin */
-  GPIO_InitStruct.Pin = R_N4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(R_N4_GPIO_Port, &GPIO_InitStruct);
-
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
@@ -1165,6 +1214,9 @@ static void MX_GPIO_Init(void)
 
   HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
@@ -1204,37 +1256,25 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 		}
 	}
 
-    for (uint8_t i = 0; i < NUM_NEIGHBOURS; i++) {
-	  // rising edge at neighbor receive pin i was detected and packet should be received from neighbour i
-	  if((GPIO_Pin == neighbourReceivePins[i]) && (neighbourIDs[i] == partnerId)){
-        HAL_Delay(DEBOUNCE_INTERVAL);
-        // check if pin is still high after debounce interval
-        if (HAL_GPIO_ReadPin(neighbourReceivePorts[i], neighbourReceivePins[i]) == GPIO_PIN_SET) {
-	  	  GPIO_neighbour_in = TRUE;
-          break;
-        }
-	  }
+	// rising edge at neighbour receive pin 1 was detected and packet should be received from neighbour 1
+	if((GPIO_Pin == R_N1_Pin) && (neighbourIDs[0] == partnerId)){
+		GPIO_neighbour_in = TRUE;
+	}
 
-    }
-	//// rising edge at neighbour receive pin 1 was detected and packet should be received from neighbour 1
-	//if((GPIO_Pin == R_N1_Pin) && (neighbourIDs[0] == partnerId)){
-	//	    GPIO_neighbour_in = TRUE;
-	//}
+	// rising edge at neighbour receive pin 1 was detected and packet should be received from neighbour 1
+	if((GPIO_Pin == R_N2_Pin) && (neighbourIDs[1] == partnerId)){
+		GPIO_neighbour_in = TRUE;
+	}
 
-	//// rising edge at neighbour receive pin 1 was detected and packet should be received from neighbour 1
-    //else if((GPIO_Pin == R_N2_Pin) && (neighbourIDs[1] == partnerId)){
-	//	GPIO_neighbour_in = TRUE;
-	//}
+	// rising edge at neighbour receive pin 1 was detected and packet should be received from neighbour 1
+	if((GPIO_Pin == R_N3_Pin) && (neighbourIDs[2] == partnerId)){
+		GPIO_neighbour_in = TRUE;
+	}
 
-	//// rising edge at neighbour receive pin 1 was detected and packet should be received from neighbour 1
-    //else if((GPIO_Pin == R_N3_Pin) && (neighbourIDs[2] == partnerId)){
-	//	GPIO_neighbour_in = TRUE;
-	//}
-
-	//// rising edge at neighbour receive pin 1 was detected and packet should be received from neighbour 1
-    //else if((GPIO_Pin == R_N4_Pin) && (neighbourIDs[3] == partnerId)){
-	//	GPIO_neighbour_in = TRUE;
-	//}
+	// rising edge at neighbour receive pin 1 was detected and packet should be received from neighbour 1
+	if((GPIO_Pin == R_N4_Pin) && (neighbourIDs[3] == partnerId)){
+		GPIO_neighbour_in = TRUE;
+	}
 
 }
 
