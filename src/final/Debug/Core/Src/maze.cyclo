@@ -1,0 +1,8 @@
+../Core/Src/maze.c:7:6:initMaze	2
+../Core/Src/maze.c:26:6:resetMaze	16
+../Core/Src/maze.c:54:6:initPath	1
+../Core/Src/maze.c:63:6:resetPath	2
+../Core/Src/maze.c:74:6:pathPush	1
+../Core/Src/maze.c:80:6:carveMaze	12
+../Core/Src/maze.c:133:6:generateMaze	3
+../Core/Src/maze.c:148:6:solveMaze	21

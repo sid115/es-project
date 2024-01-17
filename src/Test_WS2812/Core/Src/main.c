@@ -35,11 +35,27 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define NUM_COLORS 17 // 16 pkg colors + black
+#define NUM_COLORS 18 // 16 pkg colors + black + wall
 #define ANIMATION_DELAY_MS 30 // time in ms an animation should take
 
 #define MAZE_WIDTH (WS2812_NUM_LEDS_X - 1)
 #define MAZE_HEIGHT (WS2812_NUM_LEDS_Y - 1)
+
+/// BEGIN MERGE TO PRODUCTION ///
+// do-while(0) is a common trick to make a macro behave like a function
+#define FIND_INDEX(array, size, element, result) \
+do { \
+    uint16_t found = 0; \
+    for (uint16_t i = 0; i < size; ++i) { \
+        if (array[i] == element) { \
+            result = i; \
+            found = 1; \
+            break; \
+        } \
+    } \
+    if (!found) result = -1; \
+} while (0)
+/// END MERGE TO PRODUCTION ///
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -60,11 +76,12 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 enum
 {
+  C_BLACK,                              // do not change
   C_WHITE, C_RED, C_GREEN, C_BLUE,      // do not change
   C_CYAN, C_MAGENTA, C_YELLOW, C_BROWN, // do not change
   C_LIME, C_OLIVE, C_ORANGE, C_PINK,    // do not change
   C_PURPLE, C_TEAL, C_VIOLET, C_MAUVE,  // do not change
-  C_BLACK                               // add more colors as you see fit
+  C_WALL                                // add more colors as you see fit
 };
 /* USER CODE END PV */
 
@@ -82,6 +99,90 @@ static void MX_SPI2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+/// BEGIN MERGE TO PRODUCTION ///
+void animateSend(void) {
+	uint8_t i = 0;
+
+	// find index of Lager, where packageId is stored
+    FIND_INDEX(Lager, LAGER_SIZE, packageId, i);
+
+	// skip any but first function call and if FIND_INDEX was unsuccesfull
+	if (i < 0 || i >= LAGER_SIZE) return;
+
+	// blink corresponding LED once
+    pixels[i+1] = color[C_BLACK];
+	writeLEDs(pixels);
+	HAL_Delay(BLINK_TIME);
+    pixels[LAGER_SIZE+1] = color[packageId];
+	writeLEDs(pixels);
+	HAL_Delay(BLINK_TIME);
+    pixels[LAGER_SIZE+1] = color[C_BLACK];
+	writeLEDs(pixels);
+
+    // TODO: maze stuff
+}
+
+void animateReceive(void) {
+	uint8_t i = 0;
+
+	// find index of tempLager, where packageId is stored
+    FIND_INDEX(tempLager, LAGER_SIZE, packageId, i);
+
+	// skip any but first function call and if FIND_INDEX was unsuccesfull
+	if (i < 0 || i >= LAGER_SIZE) return;
+
+	// blink corresponding LED once
+    pixels[0] = color[packageId];
+	writeLEDs(pixels);
+	HAL_Delay(BLINK_TIME);
+    pixels[0] = color[C_BLACK];
+	writeLEDs(pixels);
+	HAL_Delay(BLINK_TIME);
+    pixels[i+1] = color[packageId];
+	writeLEDs(pixels);
+
+    // TODO: maze stuff
+}
+
+void animateCreate(void) {
+	uint8_t i = 0;
+
+	// find index of tempLager, where packageId is stored
+    FIND_INDEX(tempLager, LAGER_SIZE, packageId, i);
+
+	// skip any but first function call and if FIND_INDEX was unsuccesfull
+	if (i < 0 || i >= LAGER_SIZE) return;
+
+	// blink corresponding LED once
+    pixels[i+1] = color[packageId];
+	writeLEDs(pixels);
+	HAL_Delay(BLINK_TIME);
+    pixels[i+1] = color[C_BLACK];
+	writeLEDs(pixels);
+	HAL_Delay(BLINK_TIME);
+    pixels[i+1] = color[packageId];
+	writeLEDs(pixels);
+}
+void animateDeliver(void) {
+	uint8_t i = 0;
+
+	// find index of Lager, where packageId is stored
+    FIND_INDEX(Lager, LAGER_SIZE, packageId, i);
+
+	// skip any but first function call and if FIND_INDEX was unsuccesfull
+	if (i < 0 || i >= LAGER_SIZE) return;
+
+	// blink corresponding LED once
+    pixels[i+1] = color[C_BLACK];
+	writeLEDs(pixels);
+	HAL_Delay(BLINK_TIME);
+    pixels[i+1] = color[packageId];
+	writeLEDs(pixels);
+	HAL_Delay(BLINK_TIME);
+    pixels[i+1] = color[C_BLACK];
+	writeLEDs(pixels);
+}
+/// END MERGE TO PRODUCTION ///
 /* USER CODE END 0 */
 
 /**
@@ -94,6 +195,7 @@ int main(void)
 
   ColorRGB_t color[NUM_COLORS] = {
   /* B    R    G   */
+    {0,   0,   0  }, // C_BLACK
     {255, 255, 255}, // C_WHITE
     {0,   255, 0  }, // C_RED
     {0,   0,   255}, // C_GREEN
@@ -110,8 +212,29 @@ int main(void)
     {128, 0,   128}, // C_TEAL
     {128, 128, 0  }, // C_VIOLET
     {128, 128, 0  }, // C_MAUVE
-    {0,   0,   0  }  // C_BLACK
+    {4,   4,   4  }  // C_WALL
   };
+  ColorRGB_t darkColor[NUM_COLORS] = {
+  /*  B    R    G  */
+  {  0,   0,   0 }, // C_BLACK
+  { 16,  16,  16 }, // C_WHITE
+  {  0,  16,   0 }, // C_RED
+  {  0,   0,  16 }, // C_GREEN
+  { 16,   0,   0 }, // C_BLUE
+  { 16,   0,  16 }, // C_CYAN
+  { 16,  16,   0 }, // C_MAGENTA
+  {  0,  16,  16 }, // C_YELLOW
+  {  4,  12,   8 }, // C_BROWN
+  {  0,  12,  16 }, // C_LIME
+  {  0,   8,   8 }, // C_OLIVE
+  {  0,  16,   8 }, // C_ORANGE
+  { 12,  16,  12 }, // C_PINK
+  {  4,  12,   0 }, // C_PURPLE
+  {  8,   0,   8 }, // C_TEAL
+  {  8,   8,   0 }, // C_VIOLET
+  {  8,   8,   0 }, // C_MAUVE
+  {  1,   1,   1 }  // C_WALL
+};
   //ColorRGB_t* pixel[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X] = {0}; // fill with &color[C_COLOR]
                                                                 
   /* maze vars */
@@ -119,6 +242,8 @@ int main(void)
   uint8_t startY = 0;
   uint8_t exitX = MAZE_WIDTH - 2;
   uint8_t exitY = MAZE_HEIGHT - 1;
+
+  uint8_t packageID = 0;
 
   uint16_t i = 0, x = 0, y = 0; // index variables
   /* USER CODE END 1 */
@@ -160,15 +285,17 @@ int main(void)
   {
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
-	  //printf("Hello World \n");
 	/* reset panel to black */
 	ws2812_pixel_all(&color[C_BLACK]);
 
 	/* set start and end point */
     startX++;
-    if (startX == WS2812_NUM_LEDS_X - 1) startX = 1;
+    if (startX == MAZE_WIDTH - 1) startX = 1;
     exitX--;
-    if (exitX == 0) exitX = WS2812_NUM_LEDS_X - 2;
+    if (exitX == 0) exitX = MAZE_WIDTH - 2;
+
+    /* set package color */
+    packageID = C_GREEN;
 
 	/* set new start and exit */
     maze.start.x = startX; maze.start.y = startY;
@@ -179,24 +306,33 @@ int main(void)
 	solveMaze(&maze, &path);
 
 	/* write maze */
-    ws2812_pixel_all(&(ColorRGB_t){15, 15, 15});
 	for (x = 0; x < MAZE_WIDTH; x++)
 	{
 	  for (y = 0; y < MAZE_HEIGHT; y++)
 	  {
-	    if (maze.grid[y][x] != WALL) ws2812_pixel(x, y, &color[C_BLACK]);
+	    if (maze.grid[y][x] == WALL) ws2812_pixel(x, y, &color[C_WALL]);
 	  }
 	}
 
-	/* solve maze */
+	/* write solution */
 	for (i = path.size - 1; i >= 1; i--)
 	{
+      // HOTFIX: write start point at first iteration since it missing in path
+      if (i == path.size - 1)
+      {
+        ws2812_pixel(startX, startY, &color[packageID]);
+        HAL_Delay(ANIMATION_DELAY_MS);
+        ws2812_pixel(startX, startY, &darkColor[packageID]);
+      }
       if (path.p[i].x != 0 && path.p[i].y != 0)
       {
-        ws2812_pixel(path.p[i].x, path.p[i].y, &(ColorRGB_t){0, 15, 0}); // TODO: start point is not in path
+        ws2812_pixel(path.p[i].x, path.p[i].y, &color[packageID]); // TODO: start point is not in path
         HAL_Delay(ANIMATION_DELAY_MS);
+        ws2812_pixel(path.p[i].x, path.p[i].y, &darkColor[packageID]);
       }
 	}
+
+    HAL_Delay(5*ANIMATION_DELAY_MS);
 
     /* reset */
     resetMaze(&maze, startX, startY, exitX, exitY);

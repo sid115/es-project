@@ -15,12 +15,6 @@
   *
   ******************************************************************************
   */
-
-// Packetverwaltung als Application auf MMCP Protokoll Version 5
-// Abgabe ULP 3
-// Moritz Prenzlow, 1152710
-// 12.12.2023
-// Team 03
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -28,6 +22,10 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ws2812_SPI.h"
+#include "maze.h"
+#include "numbers.h"
+#include "prng.h"
+#include "lookup_table.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -36,28 +34,24 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-//TODO: what if busy in state and receives ap nr other than 50 (poll)??? Dürfen prozesse kontrolllflüsse zurücksetzen??
 typedef uint8_t crc;
 typedef enum {FALSE, TRUE} BOOL;
-
-/* LED stuff */
-/*
-typedef union
+enum
 {
-  struct
-  {
-    uint8_t b;
-    uint8_t r;
-    uint8_t g;
-  } color;
-  uint32_t data;
-} PixelRGB_t;
-*/
+  C_BLACK,                              // do not change
+  C_WHITE, C_RED, C_GREEN, C_BLUE,      // do not change
+  C_CYAN, C_MAGENTA, C_YELLOW, C_BROWN, // do not change
+  C_LIME, C_OLIVE, C_ORANGE, C_PINK,    // do not change
+  C_PURPLE, C_TEAL, C_VIOLET, C_MAUVE,  // do not change
+  C_WALL                                // add more colors as you see fit
+};
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 /* DEFINES */
+#define MY_ADDRESS 12
+
 # define MMCP_MASTER_ADDRESS 0
 # define MMCP_VERSION 5
 
@@ -89,6 +83,32 @@ typedef union
 #define NEOPIXEL_ONE 67
 #define NUM_PIXELS 8
 #define DMA_BUFF_SIZE (NUM_PIXELS * 24) + 1
+#define NUM_COLORS 18 // 16 pkg colors + black + wall
+#define ANIMATION_DELAY_MS 60 // time in ms an animation should take // TODO: frametime
+#define MAZE_WIDTH (WS2812_NUM_LEDS_X - 1)
+#define MAZE_HEIGHT (WS2812_NUM_LEDS_Y - 1)
+
+// Neighbours
+// 0 if not neighbour present
+#define NEIGHBOUR_ID_NORTH 0 // do not change
+#define NEIGHBOUR_ID_EAST 1
+#define NEIGHBOUR_ID_SOUTH 0
+#define NEIGHBOUR_ID_WEST 0
+
+// Start and exit nodes
+// set to -1 for no point
+#define NEIGHBOUR_NORTH_X -1
+#define NEIGHBOUR_NORTH_Y -1
+#define NEIGHBOUR_EAST_X 0
+#define NEIGHBOUR_EAST_Y (MAZE_HEIGHT / 2)
+#define NEIGHBOUR_SOUTH_X (MAZE_WIDTH / 2)
+#define NEIGHBOUR_SOUTH_Y (MAZE_HEIGHT - 1)
+#define NEIGHBOUR_WEST_X (MAZE_WIDTH - 1)
+#define NEIGHBOUR_WEST_Y (MAZE_HEIGHT / 2)
+#define STORAGE_INBOUND_X (MAZE_WIDTH / 2 - 2)
+#define STORAGE_INBOUND_Y 0
+#define STORAGE_OUTBOUND_X (STORAGE_INBOUND_X + 4)
+#define STORAGE_OUTBOUND_Y 0
 
 //* Packet forwarding defines *//
 #define NUM_NEIGHBOURS 4
@@ -113,7 +133,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 /* GLOBALS */
-uint8_t myAddress = 12; // Board address
+uint8_t myAddress = MY_ADDRESS; // Board address
 
 bool rx_complete = 0; // TRUE, when serial receive is complete and HAL_UART_RxCpltCallback is called
 bool tx_complete = 0; // TRUE, when serial transmit is complete and HAL_UART_TxCpltCallback is called
@@ -136,12 +156,63 @@ uint8_t LEDColors[17][3] = { {0, 0, 0}, {255, 255, 255},  {255, 0, 0},
 		 {128, 0, 128},  {224, 176, 255} };
 PixelRGB_t pixels[NUM_PIXELS] = {0}; // TODO: SA/RT
 BOOL timer_irq = FALSE; // gets set HIGH every 750ms
-
-//BOOL count = FALSE;
+PixelRGB_t color[NUM_COLORS] = {
+/*     B    R    G   */
+    { {0,   0,   0  } }, // C_BLACK
+    { {255, 255, 255} }, // C_WHITE
+    { {0,   255, 0  } }, // C_RED
+    { {0,   0,   255} }, // C_GREEN
+    { {255, 0,   0  } }, // C_BLUE
+    { {255, 0,   255} }, // C_CYAN
+    { {255, 255, 0  } }, // C_MAGENTA
+    { {0,   255, 255} }, // C_YELLOW
+    { {64,  191, 128} }, // C_BROWN
+    { {0,   191, 255} }, // C_LIME
+    { {0,   128, 128} }, // C_OLIVE
+    { {0,   255, 128} }, // C_ORANGE
+    { {191, 255, 191} }, // C_PINK
+    { {64,  191, 0  } }, // C_PURPLE
+    { {128, 0,   128} }, // C_TEAL
+    { {128, 128, 0  } }, // C_VIOLET
+    { {128, 128, 0  } }, // C_MAUVE
+    { {4,   4,   4  } }  // C_WALL
+  };
+PixelRGB_t darkColor[NUM_COLORS] = {
+/*     B    R    G  */
+  { {  0,   0,   0 } }, // C_BLACK
+  { { 16,  16,  16 } }, // C_WHITE
+  { {  0,  16,   0 } }, // C_RED
+  { {  0,   0,  16 } }, // C_GREEN
+  { { 16,   0,   0 } }, // C_BLUE
+  { { 16,   0,  16 } }, // C_CYAN
+  { { 16,  16,   0 } }, // C_MAGENTA
+  { {  0,  16,  16 } }, // C_YELLOW
+  { {  4,  12,   8 } }, // C_BROWN
+  { {  0,  12,  16 } }, // C_LIME
+  { {  0,   8,   8 } }, // C_OLIVE
+  { {  0,  16,   8 } }, // C_ORANGE
+  { { 12,  16,  12 } }, // C_PINK
+  { {  4,  12,   0 } }, // C_PURPLE
+  { {  8,   0,   8 } }, // C_TEAL
+  { {  8,   8,   0 } }, // C_VIOLET
+  { {  8,   8,   0 } }, // C_MAUVE
+  { {  1,   1,   1 } }  // C_WALL
+};
 
 // Utility for ISR (not specified in SA/RT)
-uint16_t neighbourSendPins[NUM_NEIGHBOURS] = {S_N1_Pin, S_N2_Pin, S_N3_Pin, S_N4_Pin};
-const uint8_t neighbourIDs[NUM_NEIGHBOURS] = {1, 0, 0, 0}; // 0, if no neighbour at Pin // Input Pins are: R_N1_Pin, R_N2_Pin, R_N3_Pin, R_N4_Pin
+const uint16_t neighbourSendPins[NUM_NEIGHBOURS] = {S_N1_Pin, S_N2_Pin, S_N3_Pin, S_N4_Pin};
+const uint8_t neighbourIDs[NUM_NEIGHBOURS] = {
+    NEIGHBOUR_ID_NORTH, 
+    NEIGHBOUR_ID_EAST, 
+    NEIGHBOUR_ID_SOUTH, 
+    NEIGHBOUR_ID_WEST
+}; // Input Pins are: R_N1_Pin, R_N2_Pin, R_N3_Pin, R_N4_Pin
+const Point neighbourPoints[NUM_NEIGHBOURS] = {
+  {NEIGHBOUR_NORTH_X, NEIGHBOUR_NORTH_Y, -1, -1}, 
+  {NEIGHBOUR_EAST_X, NEIGHBOUR_EAST_Y, -1, -1}, 
+  {NEIGHBOUR_SOUTH_X, NEIGHBOUR_SOUTH_Y, -1, -1},
+  {NEIGHBOUR_WEST_X, NEIGHBOUR_WEST_Y, -1, -1}
+};
 
 //* Packet forwarding begin *//
 
@@ -188,7 +259,7 @@ static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_SPI2_Init(void);
 /* USER CODE BEGIN PFP */
-void AL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
+void AL_UART_RxCpltCallback(UART_HandleTypeDef *huart); // TODO
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin );
 
@@ -262,28 +333,35 @@ void writeLEDs(PixelRGB_t* pixel){
 
 	  HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_3, dmaBuffer, DMA_BUFF_SIZE);
 }
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM3){
 		timer_irq = TRUE;
 	}
+
 }
 //* Packet forwarding begin *//
 // DFD processes //
-void stateProcessing(void){
+void stateProcessing(void) {
 	state = 0;
 }
-void stateAwait(void){
+
+void stateAwait(void) {
 	state = 1;
 }
-void stateReceived(void){
+
+void stateReceived(void) {
 	state = 2;
 }
-void stateSent(void){
+
+void stateSent(void) {
 	state = 3;
 }
-void stateFailure(void){
-	state = 4;
+
+void stateFailure(void) { 
+    state = 4;
 }
+
 void handleStore(void){
 	int i;
 
@@ -303,6 +381,7 @@ void handleStore(void){
 
 	finishedStore = TRUE;
 }
+
 void handleSend(void){
 	int i;
 
@@ -322,6 +401,7 @@ void handleSend(void){
 
 	finishedSend = TRUE;
 }
+
 void updateLager(void){
 	int i;
 
@@ -330,10 +410,41 @@ void updateLager(void){
 		Lager[i] = tempLager[i];
 	}
 }
+
 void animateSend(void){
 	BOOL on = FALSE;
 	BOOL wait = FALSE;
-	uint8_t i = 0;
+    int i = 0;
+	uint16_t x, y = 0;
+
+    uint8_t startX, startY, exitX, exitY = 0;
+    startX = STORAGE_OUTBOUND_X;
+    startY = STORAGE_OUTBOUND_Y;
+
+    // find partnerId in neighbourIDs to set exit
+    for(i = 0; i < 4; i++){
+    	if(neighbourIDs[i] == partnerId){
+    		break;
+    	}
+    }
+    exitX = neighbourPoints[i].x;
+    exitY = neighbourPoints[i].y;
+
+    // reset maze
+    resetMaze(&maze, startX, startY, exitX, exitY);
+    resetPath(&path);
+
+    // generate and write maze
+  	ws2812_pixel_all(&color[C_BLACK]);
+    generateMaze(&maze);
+	solveMaze(&maze, &path);
+	for (x = 0; x < MAZE_WIDTH; x++)
+	{
+	  for (y = 0; y < MAZE_HEIGHT; y++)
+	  {
+	    if (maze.grid[y][x] == WALL) ws2812_pixel(x, y, &color[C_WALL]);
+	  }
+	}
 
 	// find index of Lager, were packageId was stored //TODO: SA/RT Lager noch rein!!
 	for(i = 0; i < LAGER_SIZE; i++){
@@ -347,7 +458,6 @@ void animateSend(void){
 	pixels[i+1].color.r = 0;
 	pixels[i+1].color.b = 0;
 	writeLEDs(pixels);
-
 
 	// blink last (outgoing) LED once
 	timer_irq = FALSE;
@@ -381,11 +491,76 @@ void animateSend(void){
 
 	}
 	writeLEDs(pixels);
+
+    // write maze solution
+    // HOTFIX: write start point at first iteration since it missing in path
+    ws2812_pixel(startX, startY, &color[packageId]);
+    HAL_Delay(ANIMATION_DELAY_MS);
+    ws2812_pixel(startX, startY, &darkColor[packageId]);
+    for (i = path.size - 1; i > -1; i--)
+	{
+      if (!(path.p[i].x == 0 && path.p[i].y == 0)) // (0, 0)s are invalid points for solution
+      {
+        ws2812_pixel(path.p[i].x, path.p[i].y, &color[packageId]); // TODO: start point is not in path
+        HAL_Delay(ANIMATION_DELAY_MS);
+        ws2812_pixel(path.p[i].x, path.p[i].y, &darkColor[packageId]);
+      }
+	}
+
+    HAL_Delay(500);
+    ws2812_pixel_all(&color[C_BLACK]);
 }
 
 void animateReceive(void){
-	BOOL on = FALSE;
+  	BOOL on = FALSE;
 	BOOL wait = FALSE;
+    int i = 0;
+	uint16_t x, y = 0;
+
+    uint8_t startX, startY, exitX, exitY = 0;
+
+    // find partnerId in neighbourIDs to set exit
+    for(i = 0; i < 4; i++){
+    	if(neighbourIDs[i] == partnerId){
+    		break;
+    	}
+    }
+    startX = neighbourPoints[i].x;
+    startY = neighbourPoints[i].y;
+
+    exitX = STORAGE_INBOUND_X;
+    exitY = STORAGE_INBOUND_Y;
+
+    // reset maze
+    resetMaze(&maze, startX, startY, exitX, exitY);
+    resetPath(&path);
+
+    // generate and write maze
+  	ws2812_pixel_all(&color[C_BLACK]);
+    generateMaze(&maze);
+	solveMaze(&maze, &path);
+	for (x = 0; x < MAZE_WIDTH; x++)
+	{
+	  for (y = 0; y < MAZE_HEIGHT; y++)
+	  {
+	    if (maze.grid[y][x] == WALL) ws2812_pixel(x, y, &color[C_WALL]);
+	  }
+	}
+
+    // write maze solution
+    // HOTFIX: write start point at first iteration since it missing in path
+    ws2812_pixel(startX, startY, &color[packageId]);
+    HAL_Delay(ANIMATION_DELAY_MS);
+    ws2812_pixel(startX, startY, &darkColor[packageId]);
+    for (i = path.size - 1; i > -1; i--)
+	{
+      if (!(path.p[i].x == 0 && path.p[i].y == 0)) // (0, 0)s are invalid points for solution
+      {
+        ws2812_pixel(path.p[i].x, path.p[i].y, &color[packageId]); // TODO: start point is not in path
+        HAL_Delay(ANIMATION_DELAY_MS);
+        ws2812_pixel(path.p[i].x, path.p[i].y, &darkColor[packageId]);
+      }
+	}
 
 	// blink first (incoming) LED once
 	timer_irq = FALSE;
@@ -412,16 +587,18 @@ void animateReceive(void){
 	}
 
 	// display current Lager
-	for(int i = 0; i < LAGER_SIZE; i++){
+	for(i = 0; i < LAGER_SIZE; i++){
 		pixels[i+1].color.g = (uint8_t)LEDColors[tempLager[i]][1]*0.1;
 		pixels[i+1].color.r = (uint8_t)LEDColors[tempLager[i]][0]*0.1;
 		pixels[i+1].color.b = (uint8_t)LEDColors[tempLager[i]][2]*0.1;
-
 	}
 	writeLEDs(pixels);
-}
-void animateCreate(void){
 
+    HAL_Delay(500);
+    ws2812_pixel_all(&color[C_BLACK]);
+}
+
+void animateCreate(void){
 	BOOL on = FALSE;
 	BOOL wait = FALSE;
 	uint8_t i = 0;
@@ -467,6 +644,7 @@ void animateCreate(void){
 	}
 	writeLEDs(pixels);
 }
+
 void animateDeliver(void){
 	BOOL on = FALSE;
 	BOOL wait = FALSE;
@@ -513,6 +691,7 @@ void animateDeliver(void){
 	}
 	writeLEDs(pixels);
 }
+
 void pulse(void){
 	uint8_t partnerNumber = 0;
 	uint8_t i = 0;
@@ -530,6 +709,7 @@ void pulse(void){
 	HAL_Delay(5);
 	HAL_GPIO_WritePin (GPIOC, neighbourSendPins[partnerNumber], GPIO_PIN_RESET);
 }
+
 void checkFailure(void){
 	BOOL lagerFull = TRUE;
 	BOOL packetInLager = FALSE;
@@ -585,7 +765,6 @@ void checkFailure(void){
 		unknownPacket = TRUE;
 	}
 
-
 	// set errorId according to failure
 	if(packetInLager){
 		failure = TRUE;
@@ -608,6 +787,7 @@ void checkFailure(void){
 		errorId = 5; //TODO: Minispezifikation
 	}
 }
+
 void resetData(){
 	packageId = 0;
 	partnerId = 0;
@@ -753,15 +933,15 @@ void pat(void){
 		break;
 	case A_pulse:
 		animateSend();
-		HAL_Delay(3000);
-		PixelRGB_t pixel;
-		// Access the members through the color struct
-		pixel.color.r = 0;
-		pixel.color.g = 20;
-		pixel.color.b = 20;
+		//HAL_Delay(3000);
+		//PixelRGB_t pixel;
+		//// Access the members through the color struct
+		//pixel.color.r = 0;
+		//pixel.color.g = 20;
+		//pixel.color.b = 20;
 		pulse();
-		ws2812_pixel_all(&pixel);
-		HAL_Delay(1000);
+		//ws2812_pixel_all(&pixel);
+		//HAL_Delay(1000);
 		updateLager();
 		stateSent();
 		break;
@@ -810,12 +990,6 @@ void pat(void){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	/*
-	// Debug variables
-	char buf[200];
-	long lastMillis = 0;
-	long millis = 0;
-	*/
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -845,11 +1019,11 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	HAL_UART_Receive_IT(&huart1, rx_buf, L1_PDU_size);
     HAL_TIM_Base_Start_IT(&htim3);
-	// Zustandsuebergangsdiagramm reset
-	zustand = Z_idle;
-	aktion = A_idle;
-	pat();
-
+    ws2812_init();
+    initMaze(&maze, MAZE_HEIGHT, MAZE_WIDTH, 1, 0, MAZE_WIDTH - 2, MAZE_HEIGHT - 1);
+    initPath(&path, MAZE_WIDTH * MAZE_HEIGHT);
+    initPRNG(&rng, numbers, SIZE_NUMBERS);
+    initLookupTable(&lookupTable, WS2812_NUM_LEDS_Y, WS2812_NUM_LEDS_X);
 	// Reset LEDs
 	for(int i = 0; i < NUM_PIXELS; i++){
 		pixels[i].color.g = 0;
@@ -857,8 +1031,10 @@ int main(void)
 		pixels[i].color.b = 0;
 	}
 	writeLEDs(pixels);
-
-	ws2812_init();
+	// Zustandsuebergangsdiagramm reset
+	zustand = Z_idle;
+	aktion = A_idle;
+	pat();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -869,14 +1045,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-		PixelRGB_t pixel;
-		// Access the members through the color struct
-		pixel.color.r = 20;
-		pixel.color.g = 20;
-		pixel.color.b = 0;
-
-		ws2812_pixel_all(&pixel);
 	  std();
 	  pat();
 	}

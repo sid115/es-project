@@ -7,7 +7,7 @@ void ws2812_init(void)
 {
   memset(ws2812_buffer, 0, WS2812_BUFFER_SIZE); // fill buffer with 0s
   HAL_SPI_Transmit_DMA(&hspi2, ws2812_buffer, WS2812_BUFFER_SIZE); // write buffer to LEDs
-  ws2812_pixel_all(&(PixelRGB_t){0, 0, 0}); // set LEDs to black
+  ws2812_pixel_all(&(PixelRGB_t){{0, 0, 0}}); // set LEDs to black
 }
 
 // set one pixel to given color

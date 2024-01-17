@@ -72,10 +72,9 @@ void resetPath(Path* path) {
 }
 
 void pathPush(Path* path, Point* point) {
-    path->p[path->count] = *point;
-    path->count++;
+    if (path->count >= path->size) exit(1);
 
-    if (path->count == path->size) exit(1);
+    path->p[path->count++] = *point;
 }
 
 void carveMaze(Maze *maze, uint8_t x, uint8_t y) {
@@ -167,7 +166,7 @@ void solveMaze(Maze* maze, Path* path) {
     uint16_t rear = 0; /* end of queue where new elements are added */
 
     /* enqueue start point and mark it as visited */
-    pathPush(path, &(maze->start));
+    //pathPush(path, &(maze->start));
     queue[rear++] = maze->start;
     visited[maze->start.y][maze->start.x] = true;
 
