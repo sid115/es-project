@@ -25,7 +25,7 @@
 #include "maze.h"
 #include "numbers.h"
 #include "prng.h"
-#include<stdio.h>
+#include "lookup_table.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,6 +37,9 @@
 /* USER CODE BEGIN PD */
 #define NUM_COLORS 17 // 16 pkg colors + black
 #define ANIMATION_DELAY_MS 30 // time in ms an animation should take
+
+#define MAZE_WIDTH (WS2812_NUM_LEDS_X - 1)
+#define MAZE_HEIGHT (WS2812_NUM_LEDS_Y - 1)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -79,13 +82,6 @@ static void MX_SPI2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int _write(int file, char *ptr, int len) {
-  int DataIdx;
-  for (DataIdx = 0; DataIdx < len; DataIdx++) {
-    ITM_SendChar(*ptr++);
-  }
-  return len;
-}
 /* USER CODE END 0 */
 
 /**
@@ -121,8 +117,8 @@ int main(void)
   /* maze vars */
   uint8_t startX = 1;
   uint8_t startY = 0;
-  uint8_t exitX = WS2812_NUM_LEDS_X - 2;
-  uint8_t exitY = WS2812_NUM_LEDS_Y - 1;
+  uint8_t exitX = MAZE_WIDTH - 2;
+  uint8_t exitY = MAZE_HEIGHT - 1;
 
   uint16_t i = 0, x = 0, y = 0; // index variables
   /* USER CODE END 1 */
@@ -152,9 +148,10 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   ws2812_init();
-  initMaze(&maze, WS2812_NUM_LEDS_Y, WS2812_NUM_LEDS_X, startX, startY, exitX, exitY);
-  initPath(&path, WS2812_NUM_LEDS_Y * WS2812_NUM_LEDS_X);
+  initMaze(&maze, MAZE_HEIGHT, MAZE_WIDTH, startX, startY, exitX, exitY);
+  initPath(&path, MAZE_WIDTH * MAZE_HEIGHT);
   initPRNG(&rng, numbers, SIZE_NUMBERS);
+  initLookupTable(&lookupTable, WS2812_NUM_LEDS_Y, WS2812_NUM_LEDS_X);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -163,15 +160,15 @@ int main(void)
   {
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
-	  printf("Hello World \n");
+	  //printf("Hello World \n");
 	/* reset panel to black */
 	ws2812_pixel_all(&color[C_BLACK]);
 
 	/* set start and end point */
-    //startX++;
-    //if (startX == WS2812_NUM_LEDS_X - 1) startX = 1;
-    //exitX--;
-    //if (exitX == 0) exitX = WS2812_NUM_LEDS_X - 2;
+    startX++;
+    if (startX == WS2812_NUM_LEDS_X - 1) startX = 1;
+    exitX--;
+    if (exitX == 0) exitX = WS2812_NUM_LEDS_X - 2;
 
 	/* set new start and exit */
     maze.start.x = startX; maze.start.y = startY;
@@ -182,11 +179,12 @@ int main(void)
 	solveMaze(&maze, &path);
 
 	/* write maze */
-	for (x = 0; x < WS2812_NUM_LEDS_X; x++)
+    ws2812_pixel_all(&(ColorRGB_t){15, 15, 15});
+	for (x = 0; x < MAZE_WIDTH; x++)
 	{
-	  for (y = 0; y < WS2812_NUM_LEDS_Y; y++)
+	  for (y = 0; y < MAZE_HEIGHT; y++)
 	  {
-	    if (maze.grid[y][x] == WALL) ws2812_pixel(x, y, &(ColorRGB_t){15, 15, 15}); // C_WHITE is too bright
+	    if (maze.grid[y][x] != WALL) ws2812_pixel(x, y, &color[C_BLACK]);
 	  }
 	}
 
@@ -195,7 +193,7 @@ int main(void)
 	{
       if (path.p[i].x != 0 && path.p[i].y != 0)
       {
-        ws2812_pixel(path.p[i].x, path.p[i].y, &color[C_RED]); // TODO: start point is not in path
+        ws2812_pixel(path.p[i].x, path.p[i].y, &(ColorRGB_t){0, 15, 0}); // TODO: start point is not in path
         HAL_Delay(ANIMATION_DELAY_MS);
       }
 	}

@@ -36,14 +36,28 @@ typedef struct
   uint8_t g;
 } ColorRGB_t;
 
+typedef union
+{
+  struct
+  {
+    uint8_t b;
+    uint8_t r;
+    uint8_t g;
+  } color;
+  uint32_t data;
+} PixelRGB_t;
+
 extern SPI_HandleTypeDef WS2812_SPI_HANDLE;
 extern uint8_t ws2812_buffer[];
 
 uint16_t coord2Index (uint8_t _x, uint8_t _y);
 void ws2812_init(void);
-void ws2812_pixel(uint8_t _x, uint8_t _y, ColorRGB_t* color);
-void ws2812_pixel_all(ColorRGB_t* color);
-void ws2812_pixel_pic(ColorRGB_t* picture[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X]);
+//void ws2812_pixel(uint8_t _x, uint8_t _y, ColorRGB_t* color);
+void ws2812_pixel(uint8_t _x, uint8_t _y, PixelRGB_t* color);
+//void ws2812_pixel_all(ColorRGB_t* color);
+void ws2812_pixel_all(PixelRGB_t* color);
+//void ws2812_pixel_pic(ColorRGB_t* picture[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X]);
+void ws2812_pixel_pic(PixelRGB_t* picture[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X]);
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi);
 
 #endif /* SRC_WS2812_SPI_H_ */

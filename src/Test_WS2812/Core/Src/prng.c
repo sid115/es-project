@@ -15,7 +15,6 @@ void initPRNG(PseudoRNG* rng, int* numbers, int size) {
 
 /* get next random number */
 int getRand(PseudoRNG *rng) {
-    int number = rng->num[rng->ind];
     rng->ind = (rng->ind + 1) % rng->size;
-    return number;
+    return rng->num[rng->ind];
 }

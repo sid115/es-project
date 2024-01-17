@@ -1,0 +1,2 @@
+../Core/Src/prng.c:10:6:initPRNG	1
+../Core/Src/prng.c:17:5:getRand	1

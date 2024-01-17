@@ -1,2 +1,2 @@
 ../Core/Src/prng.c:10:6:initPRNG	24	static
-../Core/Src/prng.c:17:5:getRand	24	static
+../Core/Src/prng.c:17:5:getRand	16	static

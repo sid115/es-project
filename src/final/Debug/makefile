@@ -60,8 +60,8 @@ all: main-build
 main-build: es-project.elf secondary-outputs
 
 # Tool invocations
-es-project.elf es-project.map: $(OBJS) $(USER_OBJS) C:\ST\Workspace\ES_Projekt\es-project\src\final\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "es-project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\ST\Workspace\ES_Projekt\es-project\src\final\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="es-project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+es-project.elf es-project.map: $(OBJS) $(USER_OBJS) /home/sid/src/es-project/src/final/STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "es-project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/sid/src/es-project/src/final/STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="es-project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

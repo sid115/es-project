@@ -1,0 +1,2 @@
+../Core/Src/lookup_table.c:5:6:initLookupTable	32	static
+../Core/Src/lookup_table.c:29:6:generateLookupTable	24	static

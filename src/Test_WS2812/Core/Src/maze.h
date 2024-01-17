@@ -6,7 +6,6 @@
 #include <stdint.h> /* for uint8_t */
 #include <stdio.h>
 #include <stdlib.h>
-#include "ws2812_SPI.h" // static allocation
 
 /* cell types */
 enum {PATH, WALL, START, EXIT, SOLUTION};
@@ -19,9 +18,9 @@ typedef struct {
 } Point;
 
 typedef struct {
-    //Point* p;
-    Point p[WS2812_NUM_LEDS];
+    Point* p;
     uint16_t size;
+    uint16_t count;
 } Path;
 
 typedef struct {
@@ -29,8 +28,7 @@ typedef struct {
     uint8_t cols;   /* number of columns in maze */
     Point start;    /* start point */
     Point exit;     /* exit point */
-    //uint8_t** grid; /* pointer to 2D array representing maze */
-    uint8_t grid[WS2812_NUM_LEDS_Y][WS2812_NUM_LEDS_X];
+    uint8_t** grid; /* pointer to 2D array representing maze */
 } Maze;
 
 extern Maze maze;
