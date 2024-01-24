@@ -90,6 +90,20 @@ Simulierte Paketdrohne auf Basis des MMCP-Protokolls auf einer LED-Matrix.
 1. Bauplan in Drawio
 1. SA/RT-Modell
 
+#### Gliederung
+1. Einleitung mit Projektbeschreibung
+1. SA/RT Modell mit Erläuterung
+1. Hardware miz Schaltplan
+    1. LEDs
+    1. Nachbar-Pins
+1. (Weitere) Software
+    1. LED-Ansteuerung
+    1. Maze
+        1. Generierung
+        1. Lösungsalgorithmus
+        1. Animation Drohne
+1. Résumé (mit Video?)
+
 ## Timeline
 
 ### Abgabefristen
