@@ -154,7 +154,7 @@ uint8_t LEDColors[17][3] = { {0, 0, 0}, {255, 255, 255},  {255, 0, 0},
 		 {191, 255, 0},  {128, 128, 0},  {255, 128, 0},
 		 {255, 191, 191},  {191, 0, 64},  {0, 128, 128},
 		 {128, 0, 128},  {224, 176, 255} };
-PixelRGB_t pixels[NUM_PIXELS] = {0}; // TODO: SA/RT
+PixelRGB_t pixels[NUM_PIXELS] = {0};
 BOOL timer_irq = FALSE; // gets set HIGH every 750ms
 PixelRGB_t color[NUM_COLORS] = {
 /*     B    R    G   */
@@ -446,7 +446,7 @@ void animateSend(void){
 	  }
 	}
 
-	// find index of Lager, were packageId was stored //TODO: SA/RT Lager noch rein!!
+	// find index of Lager, were packageId was stored
 	for(i = 0; i < LAGER_SIZE; i++){
 		if(Lager[i] == packageId){
 			break;
@@ -454,7 +454,7 @@ void animateSend(void){
 	}
 
 	// turn off corresponding LED
-	pixels[i+1].color.g = 0; // TODO: SA/RT
+	pixels[i+1].color.g = 0;
 	pixels[i+1].color.r = 0;
 	pixels[i+1].color.b = 0;
 	writeLEDs(pixels);
@@ -465,7 +465,7 @@ void animateSend(void){
 		if(timer_irq && !on && !wait){
 			timer_irq = FALSE;
 			on = TRUE;
-			pixels[7].color.g = (uint8_t)LEDColors[packageId][1]*0.1; // TODO: SA/RT
+			pixels[7].color.g = (uint8_t)LEDColors[packageId][1]*0.1;
 			pixels[7].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
 			pixels[7].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
 			writeLEDs(pixels);
@@ -473,7 +473,7 @@ void animateSend(void){
 		if(timer_irq && on && !wait){
 			timer_irq = FALSE;
 			wait = TRUE;
-			pixels[7].color.g = 0; // TODO: SA/RT
+			pixels[7].color.g = 0;
 			pixels[7].color.r = 0;
 			pixels[7].color.b = 0;
 			writeLEDs(pixels);
@@ -568,7 +568,7 @@ void animateReceive(void){
 		if(timer_irq && !on && !wait){
 			timer_irq = FALSE;
 			on = TRUE;
-			pixels[0].color.g = (uint8_t)LEDColors[packageId][1]*0.1; // TODO: SA/RT
+			pixels[0].color.g = (uint8_t)LEDColors[packageId][1]*0.1;
 			pixels[0].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
 			pixels[0].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
 			writeLEDs(pixels);
@@ -576,7 +576,7 @@ void animateReceive(void){
 		if(timer_irq && on && !wait){
 			timer_irq = FALSE;
 			wait = TRUE;
-			pixels[0].color.g = 0; // TODO: SA/RT
+			pixels[0].color.g = 0;
 			pixels[0].color.r = 0;
 			pixels[0].color.b = 0;
 			writeLEDs(pixels);
@@ -616,7 +616,7 @@ void animateCreate(void){
 		if(timer_irq && !on && !wait){
 			timer_irq = FALSE;
 			on = TRUE;
-			pixels[i+1].color.g = (uint8_t)LEDColors[packageId][1]*0.1; // TODO: SA/RT
+			pixels[i+1].color.g = (uint8_t)LEDColors[packageId][1]*0.1;
 			pixels[i+1].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
 			pixels[i+1].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
 			writeLEDs(pixels);
@@ -624,7 +624,7 @@ void animateCreate(void){
 		if(timer_irq && on && !wait){
 			timer_irq = FALSE;
 			wait = TRUE;
-			pixels[i+1].color.g = 0; // TODO: SA/RT
+			pixels[i+1].color.g = 0;
 			pixels[i+1].color.r = 0;
 			pixels[i+1].color.b = 0;
 			writeLEDs(pixels);
@@ -637,7 +637,7 @@ void animateCreate(void){
 
 	// display current Lager
 	for(i = 0; i < LAGER_SIZE; i++){
-		pixels[i+1].color.g = (uint8_t)LEDColors[tempLager[i]][1]*0.1; //TODO: greift auch auf temp
+		pixels[i+1].color.g = (uint8_t)LEDColors[tempLager[i]][1]*0.1;
 		pixels[i+1].color.r = (uint8_t)LEDColors[tempLager[i]][0]*0.1;
 		pixels[i+1].color.b = (uint8_t)LEDColors[tempLager[i]][2]*0.1;
 
@@ -650,7 +650,7 @@ void animateDeliver(void){
 	BOOL wait = FALSE;
 	uint8_t i = 0;
 
-	// find index of Lager, were packageId was stored //TODO: SA/RT Lager noch rein!!
+	// find index of Lager, were packageId was stored
 	for(i = 0; i < LAGER_SIZE; i++){
 		if(Lager[i] == packageId){
 			break;
@@ -663,7 +663,7 @@ void animateDeliver(void){
 		if(timer_irq && !on && !wait){
 			timer_irq = FALSE;
 			on = TRUE;
-			pixels[i+1].color.g = (uint8_t)LEDColors[packageId][1]*0.1; // TODO: SA/RT
+			pixels[i+1].color.g = (uint8_t)LEDColors[packageId][1]*0.1;
 			pixels[i+1].color.r = (uint8_t)LEDColors[packageId][0]*0.1;
 			pixels[i+1].color.b = (uint8_t)LEDColors[packageId][2]*0.1;
 			writeLEDs(pixels);
@@ -671,7 +671,7 @@ void animateDeliver(void){
 		if(timer_irq && on && !wait){
 			timer_irq = FALSE;
 			wait = TRUE;
-			pixels[i+1].color.g = 0; // TODO: SA/RT
+			pixels[i+1].color.g = 0;
 			pixels[i+1].color.r = 0;
 			pixels[i+1].color.b = 0;
 			writeLEDs(pixels);
@@ -704,7 +704,7 @@ void pulse(void){
 		}
 	}
 
-	// toggle corresponding pin for 1ms // TODO: actually implement pulse with a state between passOn and sent (passOnPulse or something) and a timer
+	// toggle corresponding pin for 1ms
 	HAL_GPIO_WritePin (GPIOC, neighbourSendPins[partnerNumber], GPIO_PIN_SET);
 	HAL_Delay(5);
 	HAL_GPIO_WritePin (GPIOC, neighbourSendPins[partnerNumber], GPIO_PIN_RESET);
@@ -815,7 +815,7 @@ void std(void){
 			zustand = Z_processing;
 			receivedSDU = FALSE; //*
 		}
-		else if(poll || (!receivedSDU)){ //TODO: SA/RT
+		else if(poll || (!receivedSDU)){
 			aktion = A_idle;
 			poll = FALSE; //*
 		}
@@ -975,7 +975,6 @@ void pat(void){
 		stateProcessing();
 		break;
 
-	//TODO: SA/RT
 	case A_idle:
 		break;
 	}
