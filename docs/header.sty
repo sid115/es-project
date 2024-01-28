@@ -1,0 +1,89 @@
+\ProvidesPackage{header}
+
+\usepackage[ngerman]{babel} % für die deutsche Sprache
+\usepackage[T1]{fontenc} % Schriftkodierung (Für Sonderzeichen u.a.)
+\usepackage[utf8]{inputenc} % Für die direkte Eingabe von Umlauten im Editor u.a.
+\usepackage{fancyhdr} % Für Kopf- und Fußzeilen
+\usepackage{lmodern} % Schriftart "Latin Modern"
+\usepackage[normalem]{ulem} % Für das Unterstreichen von Text z.B. mit \uline{}
+\usepackage[left=2cm,right=2cm,top=1cm,bottom=1cm,
+textheight=245mm,textwidth=160mm,includeheadfoot,headsep=1cm,
+footskip=1cm,headheight=14.599pt]{geometry} % Einrichtung der Seite 
+\usepackage{setspace} % Paket zum Setzen des Zeilenabstandes
+\usepackage{graphicx} % Zum Laden von Graphiken
+\graphicspath{ {./images/} }
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{hyperref} % Hyperlinks im Inhaltsverzeichnis
+\usepackage{pdfpages}
+\usepackage{csquotes}
+\usepackage{import}
+\usepackage{float}
+
+% Tabellen
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{colortbl} 
+\usepackage{rotating} 
+\usepackage{multirow}
+\usepackage{float}
+\definecolor{lightgray}{gray}{0.9}
+\usepackage{graphicx}
+
+% Code-Formatierung
+\usepackage{xcolor}
+\usepackage{listings}
+\definecolor{mGreen}{rgb}{0,0.6,0}
+\definecolor{mGray}{rgb}{0.5,0.5,0.5}
+\definecolor{mPurple}{rgb}{0.58,0,0.82}
+\definecolor{backgroundColour}{rgb}{0.95,0.95,0.95}
+
+% C Code, kleinere Schriftgröße, noch nich so schön
+\lstdefinestyle{CStyle}{
+    backgroundcolor=\color{backgroundColour},   
+    commentstyle=\color{mGreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{mGray},
+    stringstyle=\color{mPurple},
+    basicstyle=\small\selectfont\ttfamily,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    language=C
+}
+% C Code, kein color-coding, normale Schritfgröße
+\lstdefinestyle{CBlank}{
+    basicstyle=\normalsize\selectfont\ttfamily,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=none,                                     
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    language=C
+}
+
+% Aufzählungszeichen
+\newcommand{\SubItem}[1]{
+    {\setlength\itemindent{15pt} \item[-] #1}
+}
+\newcommand{\SubItemArrow}[1]{
+    {\setlength\itemindent{15pt} \renewcommand\labelitemi{$\rightarrow$} \item #1}
+}
+\newcommand{\ItemArrow}[1]{
+    {\renewcommand\labelitemi{$\rightarrow$} \item #1}
+}
+
+\usepackage[style=numeric,sorting=none]{biblatex} % Stil hier angeben
+\addbibresource{literatur.bib} % .bib Datei hier einbinden

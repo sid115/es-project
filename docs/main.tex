@@ -1,40 +1,11 @@
 \documentclass[a4paper,11pt,oneside]{article}
-\usepackage[ngerman]{babel} % für die deutsche Sprache
-\usepackage[T1]{fontenc} % Schriftkodierung (Für Sonderzeichen u.a.)
-\usepackage[utf8]{inputenc} % Für die direkte Eingabe von Umlauten im Editor u.a.
-\usepackage{fancyhdr} % Für Kopf- und Fußzeilen
-\usepackage{lmodern} % Schriftart "Latin Modern"
-\usepackage[normalem]{ulem} % Für das Unterstreichen von Text z.B. mit \uline{}
-\usepackage[left=2cm,right=2cm,top=1cm,bottom=1cm,
-textheight=245mm,textwidth=160mm,includeheadfoot,headsep=1cm,
-footskip=1cm,headheight=14.599pt]{geometry} % Einrichtung der Seite 
-\usepackage{setspace} % Paket zum Setzen des Zeilenabstandes
-\usepackage{graphicx} % Zum Laden von Graphiken
-\graphicspath{ {./images/} }
-\usepackage{amsmath}
-\usepackage{amsthm}
-\usepackage{amsfonts}
-\usepackage{hyperref} % Hyperlinks im Inhaltsverzeichnis
-\usepackage{pdfpages}
-\usepackage{csquotes}
+\usepackage{header}
 
-% Aufzählungszeichen
-\newcommand{\SubItem}[1]{
-    {\setlength\itemindent{15pt} \item[-] #1}
-}
-\newcommand{\SubItemArrow}[1]{
-    {\setlength\itemindent{15pt} \renewcommand\labelitemi{$\rightarrow$} \item #1}
-}
-\newcommand{\ItemArrow}[1]{
-    {\renewcommand\labelitemi{$\rightarrow$} \item #1}
-}
+\pagenumbering{Roman} % stringente Paginierung
 
 \title{Team 03 - Paketdrohne \\ \textbf{Projektbericht}}
 \author{H. ?, M. Prenzlow, J. Reichmann, T. Tian}
 \date{Embedded Systems \\ Wintersemester 2023/24}
-
-\usepackage[style=numeric,sorting=none]{biblatex} % Stil hier angeben
-\addbibresource{Literatur.bib} % .bib Datei hier einbinden
 
 \begin{document}
 \pagestyle{fancy}
@@ -44,20 +15,19 @@ footskip=1cm,headheight=14.599pt]{geometry} % Einrichtung der Seite
 \tableofcontents
 \newpage
 
+\pagenumbering{arabic}
+
 \section{Projektbeschreibung}
+\import{sections/}{Projektbeschreibung.tex}
 
 \section{SA/RT Modell}
+\import{sections/}{SA_RT_Modell.tex}
 
 \section{Hardware}
-\subsection{LED-Matrix}
-\subsection{Nachbar-Pins}
+\import{sections/}{Hardware.tex} % Ausgangspin für LEDs ändern (auch wenn das eh keinem auffällt)
 
 \section{Software}
-\subsection{LED-Ansteuerung}
-\subsection{Labyrinth}
-\subsubsection{Generierung}
-\subsubsection{Lösungsalgorithmus}
-\subsubsection{Animation Drohne}
+\import{sections/}{Software.tex}
 
 \section{Tests}
 \subsection{Nur Testaufbau}
@@ -66,4 +36,7 @@ footskip=1cm,headheight=14.599pt]{geometry} % Einrichtung der Seite
 
 \section{Zusammenfassung?}
 % Zeitplan, WaAS  hABeN wIR gelERnT...?
+
+\listoffigures
+\listoftables
 \end{document}
