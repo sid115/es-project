@@ -1,0 +1,69 @@
+\documentclass[a4paper,11pt,oneside]{article}
+\usepackage[ngerman]{babel} % für die deutsche Sprache
+\usepackage[T1]{fontenc} % Schriftkodierung (Für Sonderzeichen u.a.)
+\usepackage[utf8]{inputenc} % Für die direkte Eingabe von Umlauten im Editor u.a.
+\usepackage{fancyhdr} % Für Kopf- und Fußzeilen
+\usepackage{lmodern} % Schriftart "Latin Modern"
+\usepackage[normalem]{ulem} % Für das Unterstreichen von Text z.B. mit \uline{}
+\usepackage[left=2cm,right=2cm,top=1cm,bottom=1cm,
+textheight=245mm,textwidth=160mm,includeheadfoot,headsep=1cm,
+footskip=1cm,headheight=14.599pt]{geometry} % Einrichtung der Seite 
+\usepackage{setspace} % Paket zum Setzen des Zeilenabstandes
+\usepackage{graphicx} % Zum Laden von Graphiken
+\graphicspath{ {./images/} }
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{hyperref} % Hyperlinks im Inhaltsverzeichnis
+\usepackage{pdfpages}
+\usepackage{csquotes}
+
+% Aufzählungszeichen
+\newcommand{\SubItem}[1]{
+    {\setlength\itemindent{15pt} \item[-] #1}
+}
+\newcommand{\SubItemArrow}[1]{
+    {\setlength\itemindent{15pt} \renewcommand\labelitemi{$\rightarrow$} \item #1}
+}
+\newcommand{\ItemArrow}[1]{
+    {\renewcommand\labelitemi{$\rightarrow$} \item #1}
+}
+
+\title{Team 03 - Paketdrohne \\ \textbf{Projektbericht}}
+\author{H. ?, M. Prenzlow, J. Reichmann, T. Tian}
+\date{Embedded Systems \\ Wintersemester 2023/24}
+
+\usepackage[style=numeric,sorting=none]{biblatex} % Stil hier angeben
+\addbibresource{Literatur.bib} % .bib Datei hier einbinden
+
+\begin{document}
+\pagestyle{fancy}
+\maketitle
+\newpage
+
+\tableofcontents
+\newpage
+
+\section{Projektbeschreibung}
+
+\section{SA/RT Modell}
+
+\section{Hardware}
+\subsection{LED-Matrix}
+\subsection{Nachbar-Pins}
+
+\section{Software}
+\subsection{LED-Ansteuerung}
+\subsection{Labyrinth}
+\subsubsection{Generierung}
+\subsubsection{Lösungsalgorithmus}
+\subsubsection{Animation Drohne}
+
+\section{Tests}
+\subsection{Nur Testaufbau}
+\subsection{Team 13 (Lego)}
+\subsection{Team 13 (Lego) und Team 12 (Roboterarm2)}
+
+\section{Zusammenfassung?}
+% Zeitplan, WaAS  hABeN wIR gelERnT...?
+\end{document}

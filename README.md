@@ -9,6 +9,7 @@ Simulierte Paketdrohne auf Basis des MMCP-Protokolls auf einer LED-Matrix.
 - [assets](./assets/): exportierte Bilder, PDFs, etc.
 - [plans](./assets/): Quelldateien zu Bauplänen, Schaltplänen, etc.
 - [src](./src/): Source Code
+- [docs](./docs/): Dokumentation
 
 ### Projektskizze
 ![Skizze](./assets/sketch.png)
