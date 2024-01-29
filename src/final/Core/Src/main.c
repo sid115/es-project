@@ -50,7 +50,7 @@ enum
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 /* DEFINES */
-#define MY_ADDRESS 12
+#define MY_ADDRESS 3
 
 # define MMCP_MASTER_ADDRESS 0
 # define MMCP_VERSION 5
@@ -84,26 +84,26 @@ enum
 #define NUM_PIXELS 8
 #define DMA_BUFF_SIZE (NUM_PIXELS * 24) + 1
 #define NUM_COLORS 18 // 16 pkg colors + black + wall
-#define ANIMATION_DELAY_MS 60 // time in ms an animation should take // TODO: frametime
+#define ANIMATION_FRAMETIME_MS 60 // time in ms an animation should take
 #define MAZE_WIDTH (WS2812_NUM_LEDS_X - 1)
 #define MAZE_HEIGHT (WS2812_NUM_LEDS_Y - 1)
 
 // Neighbours
 // 0 if not neighbour present
 #define NEIGHBOUR_ID_NORTH 0 // do not change
-#define NEIGHBOUR_ID_EAST 1
-#define NEIGHBOUR_ID_SOUTH 0
+#define NEIGHBOUR_ID_EAST 0
+#define NEIGHBOUR_ID_SOUTH 13
 #define NEIGHBOUR_ID_WEST 0
 
 // Start and exit nodes
 // set to -1 for no point
 #define NEIGHBOUR_NORTH_X -1
 #define NEIGHBOUR_NORTH_Y -1
-#define NEIGHBOUR_EAST_X 0
+#define NEIGHBOUR_EAST_X (MAZE_WIDTH - 1)
 #define NEIGHBOUR_EAST_Y (MAZE_HEIGHT / 2)
 #define NEIGHBOUR_SOUTH_X (MAZE_WIDTH / 2)
 #define NEIGHBOUR_SOUTH_Y (MAZE_HEIGHT - 1)
-#define NEIGHBOUR_WEST_X (MAZE_WIDTH - 1)
+#define NEIGHBOUR_WEST_X 0
 #define NEIGHBOUR_WEST_Y (MAZE_HEIGHT / 2)
 #define STORAGE_INBOUND_X (MAZE_WIDTH / 2 - 2)
 #define STORAGE_INBOUND_Y 0
@@ -174,7 +174,7 @@ PixelRGB_t color[NUM_COLORS] = {
     { {64,  191, 0  } }, // C_PURPLE
     { {128, 0,   128} }, // C_TEAL
     { {128, 128, 0  } }, // C_VIOLET
-    { {128, 128, 0  } }, // C_MAUVE
+    { {255, 224, 176} }, // C_MAUVE
     { {4,   4,   4  } }  // C_WALL
   };
 PixelRGB_t darkColor[NUM_COLORS] = {
@@ -195,7 +195,7 @@ PixelRGB_t darkColor[NUM_COLORS] = {
   { {  4,  12,   0 } }, // C_PURPLE
   { {  8,   0,   8 } }, // C_TEAL
   { {  8,   8,   0 } }, // C_VIOLET
-  { {  8,   8,   0 } }, // C_MAUVE
+  { { 16,  14,  11 } }, // C_MAUVE
   { {  1,   1,   1 } }  // C_WALL
 };
 
@@ -259,7 +259,7 @@ static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_SPI2_Init(void);
 /* USER CODE BEGIN PFP */
-void AL_UART_RxCpltCallback(UART_HandleTypeDef *huart); // TODO
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin );
 
@@ -495,14 +495,14 @@ void animateSend(void){
     // write maze solution
     // HOTFIX: write start point at first iteration since it missing in path
     ws2812_pixel(startX, startY, &color[packageId]);
-    HAL_Delay(ANIMATION_DELAY_MS);
+    HAL_Delay(ANIMATION_FRAMETIME_MS);
     ws2812_pixel(startX, startY, &darkColor[packageId]);
     for (i = path.size - 1; i > -1; i--)
 	{
       if (!(path.p[i].x == 0 && path.p[i].y == 0)) // (0, 0)s are invalid points for solution
       {
         ws2812_pixel(path.p[i].x, path.p[i].y, &color[packageId]); // TODO: start point is not in path
-        HAL_Delay(ANIMATION_DELAY_MS);
+        HAL_Delay(ANIMATION_FRAMETIME_MS);
         ws2812_pixel(path.p[i].x, path.p[i].y, &darkColor[packageId]);
       }
 	}
@@ -550,14 +550,14 @@ void animateReceive(void){
     // write maze solution
     // HOTFIX: write start point at first iteration since it missing in path
     ws2812_pixel(startX, startY, &color[packageId]);
-    HAL_Delay(ANIMATION_DELAY_MS);
+    HAL_Delay(ANIMATION_FRAMETIME_MS);
     ws2812_pixel(startX, startY, &darkColor[packageId]);
     for (i = path.size - 1; i > -1; i--)
 	{
       if (!(path.p[i].x == 0 && path.p[i].y == 0)) // (0, 0)s are invalid points for solution
       {
         ws2812_pixel(path.p[i].x, path.p[i].y, &color[packageId]); // TODO: start point is not in path
-        HAL_Delay(ANIMATION_DELAY_MS);
+        HAL_Delay(ANIMATION_FRAMETIME_MS);
         ws2812_pixel(path.p[i].x, path.p[i].y, &darkColor[packageId]);
       }
 	}
