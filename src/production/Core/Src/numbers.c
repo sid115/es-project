@@ -1,3 +1,19 @@
+/**
+ * Source file defining and initializing the 'numbers' array used in pseudo-random number generation.
+ *
+ * This file contains the definition and initialization of the global 'numbers' array declared
+ * in numbers.h. The array is filled with a predefined set of integers, which are used to 
+ * simulate random number generation in other parts of the application. The size of the array
+ * and the values it contains have been chosen to provide a good distribution for pseudo-random 
+ * number generation purposes.
+ *
+ * The 'numbers' array is designed to be used where deterministic yet seemingly random values
+ * are required. It provides a consistent set of values that can be used in various algorithms
+ * to ensure reproducibility of results while maintaining an appearance of randomness.
+ *
+ * The complete array should contain SIZE_NUMBERS elements as defined in numbers.h.
+ */
+
 #include "numbers.h"
 
 int numbers[] = {
