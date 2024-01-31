@@ -207,7 +207,7 @@ void initMaze(Maze* maze, uint8_t rows, uint8_t cols,
 }
 \end{lstlisting}
 
-Nach der Initialisierung beginnt der eigentliche Generierungsprozess, der eine Reihe von Schritten durchläuft, um Wege (\texttt{PATH}) im Labyrinth zu schaffen. Die Funktion \texttt{carveMaze} wird für jede Zelle des Labyrinths aufgerufen, beginnend bei der Startposition. Die Funktion wählt zufällig eine Richtung aus und versucht, in dieser Richtung zwei Zellen weit zu "graben" (Wege zu schaffen), vorausgesetzt, die Zielzelle und die dazwischenliegende Zelle sind beide Wände.
+Nach der Initialisierung beginnt der eigentliche Generierungsprozess, der eine Reihe von Schritten durchläuft, um Wege (\texttt{PATH}) im Labyrinth zu schaffen. Die Funktion \texttt{carveMaze} wird für jede Zelle des Labyrinths aufgerufen, beginnend bei der Startposition. Die Funktion wählt zufällig eine Richtung aus und versucht, in dieser Richtung zwei Zellen weit zu “graben” (Wege zu schaffen), vorausgesetzt, die Zielzelle und die dazwischenliegende Zelle sind beide Wände.
 
 \begin{lstlisting}[style=CStyle]
 void carveMaze(Maze* maze, uint8_t x, uint8_t y) {
@@ -230,7 +230,7 @@ Nachdem das Labyrinth generiert wurde, besteht die nächste Herausforderung dari
 
 \subsubsection{Der Lösungsalgorithmus}
 
-Die Breitensuche beginnt am Startpunkt des Labyrinths und erkundet systematisch alle benachbarten Zellen, bis der Zielpunkt gefunden wird. Dies geschieht durch die schrittweise Exploration aller von einer Zelle aus erreichbaren Nachbarzellen, wobei jede neu entdeckte Zelle in eine Warteschlange eingefügt wird. Die Zellen in der Warteschlange repräsentieren den aktuellen "Rand" der Erkundung. 
+Die Breitensuche beginnt am Startpunkt des Labyrinths und erkundet systematisch alle benachbarten Zellen, bis der Zielpunkt gefunden wird. Dies geschieht durch die schrittweise Exploration aller von einer Zelle aus erreichbaren Nachbarzellen, wobei jede neu entdeckte Zelle in eine Warteschlange eingefügt wird. Die Zellen in der Warteschlange repräsentieren den aktuellen “Rand” der Erkundung. 
 
 \begin{lstlisting}[style=CStyle]
 void solveMaze(Maze* maze, Queue* path) {
@@ -267,7 +267,7 @@ if (maze->grid[adjacentY][adjacentX] == PATH && !visited[adjacentY][adjacentX]) 
 
 \subsubsection{Animation der Drohne auf der LED-Matrix}
 
-Nachdem ein Pfad durch das Labyrinth gefunden wurde, wird die Bewegung der Paketdrohne auf der LED-Matrix animiert, um die Lieferung des Pakets visuell darzustellen. Die "Drohne" wird durch einen Pixel in der vorgegebenen Paketfarbe repräsentiert, welcher den gelösten Pfad entlang navigiert. \\
+Nachdem ein Pfad durch das Labyrinth gefunden wurde, wird die Bewegung der Paketdrohne auf der LED-Matrix animiert, um die Lieferung des Pakets visuell darzustellen. Die “Drohne” wird durch einen Pixel in der vorgegebenen Paketfarbe repräsentiert, welcher den gelösten Pfad entlang navigiert. \\
 
 \noindent \textbf{Darstellung der Drohne}
 
